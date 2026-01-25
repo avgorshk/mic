@@ -6,6 +6,10 @@ class MicroInstruction {
 public:
 	MicroInstruction(uint64_t encoding) : encoding_(encoding) {}
 
+    uint64_t GetEncoding() {
+        return encoding_;
+    }
+
     uint8_t GetReadSignals() const { return encoding_ & 0xF; }
     bool GetMemFetch() const { return (encoding_ >> 4) & 0x1; }
     bool GetMemRead() const { return (encoding_ >> 5) & 0x1; }
