@@ -1,6 +1,7 @@
 #pragma once
 
 #include "alu.h"
+#include "control_memory.h"
 
 struct Registers {
 	uint32_t mar_ = 0;
@@ -69,6 +70,8 @@ private:
 	}
 
 private:
+	Signals signals_{ 0 };
 	Registers regs_;
 	ALU alu_;
+	ControlMemory control_memory_;
 };
