@@ -2,40 +2,35 @@
 
 #include <stdint.h>
 
-struct MicroInstructionEncoding {
-	uint8_t read_signals_ : 4;
-	uint8_t mem_fetch_ : 1;
-	uint8_t mem_read_ : 1;
-	uint8_t mem_write_ : 1;
-	uint8_t mar_write_ : 1;
-	uint8_t mdr_write_ : 1;
-	uint8_t pc_write_ : 1;
-	uint8_t sp_write_ : 1;
-	uint8_t lv_write_ : 1;
-	uint8_t cpp_write_ : 1;
-	uint8_t tos_write_ : 1;
-	uint8_t opc_write_ : 1;
-	uint8_t h_write_ : 1;
-	uint8_t alu_inc : 1;
-	uint8_t alu_inva : 1;
-	uint8_t alu_enb : 1;
-	uint8_t alu_ena : 1;
-	uint8_t alu_func : 2;
-	uint8_t alu_sra1 : 1;
-	uint8_t alu_sll8 : 1;
-	uint8_t jamz : 1;
-	uint8_t jamn : 1;
-	uint8_t jmpc : 1;
-	uint8_t reserved0 : 5;
-	uint16_t next_addr : 9;
-	uint16_t reserved1 : 7;
-	uint16_t reserved2;
-};
-
 class MicroInstruction {
 public:
-	MicroInstruction() {}
+	MicroInstruction(uint64_t encoding) : encoding_(encoding) {}
+
+    uint8_t GetReadSignals() const { return encoding_ & 0xF; }
+    bool GetMemFetch() const { return (encoding_ >> 4) & 0x1; }
+    bool GetMemRead() const { return (encoding_ >> 5) & 0x1; }
+    bool GetMemWrite() const { return (encoding_ >> 6) & 0x1; }
+    bool GetMarWrite() const { return (encoding_ >> 7) & 0x1; }
+    bool GetMdrWrite() const { return (encoding_ >> 8) & 0x1; }
+    bool GetPcWrite() const { return (encoding_ >> 9) & 0x1; } 
+    bool GetSpWrite() const { return (encoding_ >> 10) & 0x1; }
+    bool GetLvWrite() const { return (encoding_ >> 11) & 0x1; }
+    bool GetCppWrite() const { return (encoding_ >> 12) & 0x1; }
+    bool GetTosWrite() const { return (encoding_ >> 13) & 0x1; }
+    bool GetOpcWrite() const { return (encoding_ >> 14) & 0x1; }
+    bool GetHWrite() const { return (encoding_ >> 15) & 0x1; }
+    bool GetAluInc() const { return (encoding_ >> 16) & 0x1; }
+    bool GetAluInva() const { return (encoding_ >> 17) & 0x1; }
+    bool GetAluEnb() const { return (encoding_ >> 18) & 0x1; }
+    bool GetAluEna() const { return (encoding_ >> 19) & 0x1; }
+    uint8_t GetAluFunc() const { return (encoding_ >> 20) & 0x3; }
+    bool GetAluSra1() const { return (encoding_ >> 22) & 0x1; }
+    bool GetAluSll8() const { return (encoding_ >> 23) & 0x1; }
+    bool GetJamz() const { return (encoding_ >> 24) & 0x1; }
+    bool GetJamn() const { return (encoding_ >> 25) & 0x1; }
+    bool GetJmpc() const { return (encoding_ >> 26) & 0x1; }
+    uint16_t GetNextAddr() const { return (encoding_ >> 27) & 0x1FF; }
 
 private:
-	
+	uint64_t encoding_ = 0;
 };
