@@ -16,29 +16,6 @@ struct Registers {
 	uint32_t h_ = 0;
 };
 
-struct Signals {
-	uint8_t mar_write_ : 1;
-	uint8_t mdr_write_ : 1;
-	uint8_t mdr_read_ : 1;
-	uint8_t pc_write_ : 1;
-	uint8_t pc_read_ : 1;
-	uint8_t mbr_read_unsigned_ : 1;
-	uint8_t mbr_read_signed_ : 1;
-	uint8_t sp_write_ : 1;
-	uint8_t sp_read_ : 1;
-	uint8_t lv_write_ : 1;
-	uint8_t lv_read_ : 1;
-	uint8_t cpp_write_ : 1;
-	uint8_t cpp_read_ : 1;
-	uint8_t tos_write_ : 1;
-	uint8_t tos_read_ : 1;
-	uint8_t opc_write_ : 1;
-	uint8_t opc_read_ : 1;
-	uint8_t h_write_ : 1;
-	uint8_t reserved0 : 5;
-	uint8_t reserved1;
-};
-
 class MIC {
 public:
 	void Run() {
@@ -46,7 +23,7 @@ public:
 	}
 
 private:
-	void Step() {
+	void Cycle() {
 		SetControlSignals();
 		ReadRegisters();
 		RunALU();
@@ -70,7 +47,6 @@ private:
 	}
 
 private:
-	Signals signals_{ 0 };
 	Registers regs_;
 	ALU alu_;
 	ControlMemory control_memory_;
