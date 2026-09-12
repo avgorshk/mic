@@ -129,6 +129,7 @@
     <ClInclude Include="alu.h" />
     <ClInclude Include="control_memory.h" />
     <ClInclude Include="mic.h" />
+    <ClInclude Include="signals.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

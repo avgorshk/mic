@@ -7,11 +7,12 @@
 constexpr size_t CONTROL_MEMORY_SIZE = 512;
 
 class ControlMemory {
-public: 
+public:
+	ControlMemory() {}
 	//ControlMemory() : memory_(CONTROL_MEMORY_SIZE) {}
 
 private:
 	//std::vector<MicroInstruction> memory_;
-	uint16_t mpc_ = 0;
-	MicroInstruction mir_;
+	//uint16_t mpc_ = 0;
+	//MicroInstruction mir_;
 };
