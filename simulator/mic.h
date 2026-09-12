@@ -2,6 +2,7 @@
 
 #include "alu.h"
 #include "control_memory.h"
+#include "signals.h"
 
 struct Registers {
 	uint32_t mar;
@@ -28,10 +29,12 @@ public:
 		WriteRegisters();
 	}
 
+	// TODO: remove
 	void SetSignals(Signals signals) {
 		signals_ = signals;
 	}
 
+    // TODO: remove
 	void SetRegisters(Registers regs) {
 		regs_ = regs;
 	}
@@ -42,10 +45,13 @@ public:
 
 private:
 	void SetSignals() {
+		MicroInstruction inst = control_memory_.LoadMIR();
+		signals_ = inst.GetSignals();
 		alu_.SetFunction(signals_.alu);
 	}
 
 	void ReadRegisters() {
+		uint32_t bus_b_ = 0;
 		if (signals_.read_cpp) bus_b_ = regs_.cpp;
 		if (signals_.read_lv) bus_b_ = regs_.lv;
 		if (signals_.read_mdr) bus_b_ = regs_.mdr;
@@ -62,15 +68,16 @@ private:
 			}
 			bus_b_ |= regs_.mbr;
 		}
+		alu_.SetInput(regs_.h, bus_b_);
 	}
 
 	void RunALU() {
-		alu_.SetInput(regs_.h, bus_b_);
 		alu_.Execute();
-		bus_c_ = alu_.GetResult();
 	}
 
 	void WriteRegisters() {
+		uint32_t bus_c_ = alu_.GetResult();
+		control_memory_.UpdateMPC(alu_.GetN(), alu_.GetZ());
 		if (signals_.write_cpp) regs_.cpp = bus_c_;
 		if (signals_.write_h) regs_.h = bus_c_;
 		if (signals_.write_lv) regs_.lv = bus_c_;
@@ -84,8 +91,6 @@ private:
 private:
 	Registers regs_ = { 0 };
 	Signals signals_ = { 0 };
-	uint32_t bus_b_ = 0;
-	uint32_t bus_c_ = 0;
 	ALU alu_;
 	ControlMemory control_memory_;
 };

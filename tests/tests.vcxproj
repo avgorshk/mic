@@ -128,7 +128,6 @@
     <ClCompile Include="test.cpp" />
     <ClCompile Include="test_alu.cpp" />
     <ClCompile Include="test_mic.cpp" />
-    <ClCompile Include="test_micro_instruction.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="doctest.h" />

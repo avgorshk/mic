@@ -2,6 +2,9 @@
 
 #include <stdint.h>
 
+#include "alu.h"
+
+// 32 bits
 struct Signals {
 	// ALU Signals (8)
 	ALUFunction alu;
@@ -32,6 +35,4 @@ struct Signals {
 	uint8_t mem_rd : 1;
 	uint8_t mem_wr : 1;
 	uint8_t mem_fetch : 1;
-
-	uint8_t reserved : 3;
 };
