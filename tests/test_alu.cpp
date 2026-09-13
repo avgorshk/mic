@@ -104,6 +104,7 @@ TEST_CASE("ALUFunction SLL8") {
 	alu.SetInput(4, 5);
 	alu.SetFunction(ALUFunction{ ALUFunctionTypes::SUM, 1, 1, 0, 0, 1, 0 });
 	alu.Execute();
+	alu.Shift();
 	CHECK(alu.GetResult() == (9 << 8));
 }
 
@@ -113,10 +114,12 @@ TEST_CASE("ALUFunction SRA1") {
 
 	alu.SetFunction(ALUFunction{ ALUFunctionTypes::SUM, 1, 1, 0, 0, 0, 1 });
 	alu.Execute();
+	alu.Shift();
 	CHECK(alu.GetResult() == (9 >> 1));
 
 	alu.SetFunction(ALUFunction{ ALUFunctionTypes::SUM, 1, 0, 1, 1, 0, 1 });
 	alu.Execute();
+	alu.Shift();
 	CHECK(alu.GetResult() == -2);
 }
 

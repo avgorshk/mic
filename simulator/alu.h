@@ -67,19 +67,25 @@ public:
 		if (f_.inc) {
 			result_ += 1;
 		}
-		if (f_.sll8) {
-			result_ <<= 8;
-		}
-		uint32_t msb = (result_ >> 31) & 1;
-		if (f_.sra1) {
-			result_ >>= 1;
-			result_ |= (msb << 31);
-		}
+		
 		if (result_ == 0) {
 			z_ = 1;
 		}
+
+		uint32_t msb = (result_ >> 31) & 1;
 		if (msb == 1) {
 			n_ = 1;
+		}
+	}
+
+	void Shift() {
+		uint32_t msb = (result_ >> 31) & 1;
+		if (f_.sll8) {
+			result_ <<= 8;
+		}
+		if (f_.sra1) {
+			result_ >>= 1;
+			result_ |= (msb << 31);
 		}
 	}
 

@@ -29,18 +29,13 @@ public:
 		WriteRegisters();
 	}
 
-	// TODO: remove
-	void SetSignals(Signals signals) {
-		signals_ = signals;
-	}
-
-    // TODO: remove
-	void SetRegisters(Registers regs) {
-		regs_ = regs;
-	}
-
 	Registers GetRegisters() const {
 		return regs_;
+	}
+
+	// TODO: remove
+	void SetMicroInstruction(MicroInstruction inst) {
+		control_memory_.SetMicroInstruction(inst);
 	}
 
 private:
@@ -73,11 +68,11 @@ private:
 
 	void RunALU() {
 		alu_.Execute();
+		alu_.Shift();
 	}
 
 	void WriteRegisters() {
 		uint32_t bus_c_ = alu_.GetResult();
-		control_memory_.UpdateMPC(alu_.GetN(), alu_.GetZ());
 		if (signals_.write_cpp) regs_.cpp = bus_c_;
 		if (signals_.write_h) regs_.h = bus_c_;
 		if (signals_.write_lv) regs_.lv = bus_c_;
@@ -86,6 +81,9 @@ private:
 		if (signals_.write_pc) regs_.pc = bus_c_;
 		if (signals_.write_sp) regs_.sp = bus_c_;
 		if (signals_.write_tos) regs_.tos = bus_c_;
+
+		// Read MBR from memory first
+		control_memory_.UpdateMPC(alu_.GetN(), alu_.GetZ(), regs_.mbr);
 	}
 
 private:

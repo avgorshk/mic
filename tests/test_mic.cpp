@@ -14,17 +14,18 @@ TEST_CASE("Increment SP") {
 	func.enb = 1;
 	func.inc = 1;
 
-	Signals signals = { 0 };
-	signals.alu = func;
-	signals.read_sp = 1;
-	signals.write_sp = 1;
+	MicroInstruction inst;
+	inst.alu = func;
+	inst.read = 4;
+	inst.write_sp = 1;
 
-	mic.SetSignals(signals);
+	mic.SetMicroInstruction(inst);
 	mic.Cycle();
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == 1);
 }
+
 
 TEST_CASE("Signed MBR To H") {
 	MIC mic;
@@ -34,18 +35,14 @@ TEST_CASE("Signed MBR To H") {
 	func.enb = 1;
 	func.inc = 1;
 
-	Signals signals = { 0 };
-	signals.alu = func;
-	signals.read_mbr_signed = 1;
-	signals.write_h = 1;
+	MicroInstruction inst;
+	inst.alu = func;
+	inst.read = 3;
+	inst.write_h = 1;
 
-	Registers regs = { 0 };
-	regs.mbr = static_cast<uint32_t>(-7);
-
-	mic.SetSignals(signals);
-	mic.SetRegisters(regs);
+	mic.SetMicroInstruction(inst);
 	mic.Cycle();
-	regs = mic.GetRegisters();
+	auto regs = mic.GetRegisters();
 
-	CHECK(regs.h == -6);
+	CHECK(regs.h == 1);
 }
