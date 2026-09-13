@@ -13,11 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="micro_instruction.h">
-      <Filter>Header Files</Filter>
-    </ClCompile>
+    <Filter Include="Header Files\micro_instructions">
+      <UniqueIdentifier>{aa2dcae8-3f3c-4761-bbcb-99d74cf949f4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="alu.h">
@@ -32,5 +30,25 @@
     <ClInclude Include="signals.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="global_memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\iadd_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\nop_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\main_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="micro_instruction.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -3,7 +3,19 @@
 #include "alu.h"
 #include "signals.h"
 
-struct MicroInstruction {
+enum MicroInstructionRead {
+	READ_MDR = 1,
+	READ_PC = 2,
+	READ_MBR_UNSIGNED = 3,
+	READ_MBR_SIGNED = 4,
+	READ_SP = 5,
+	READ_LV = 6,
+	READ_CPP = 7,
+	READ_TOS = 8,
+	READ_OPC = 9
+};
+
+struct MicroInstructionEncoding {
 	// Addr (9)
 	uint16_t next_address : 9;
 
@@ -33,70 +45,92 @@ struct MicroInstruction {
 
 	// B Bus (4)
 	uint8_t read : 4;
+};
 
-	Signals GetSignals() {
-		Signals signals;
+class MicroInstruction {
+public:
+	Signals GetSignals() const {
+		Signals signals = { 0 };
 
 		// ALU Signals (8)
-		signals.alu = alu;
+		signals.alu = inst_.alu;
 
 		// Write Signals (9)
-		signals.write_mar = write_mar;
-		signals.write_mdr = write_mdr;
-		signals.write_pc = write_pc;
-		signals.write_sp = write_sp;
-		signals.write_lv = write_lv;
-		signals.write_cpp = write_cpp;
-		signals.write_tos = write_tos;
-		signals.write_opc = write_opc;
-		signals.write_h = write_h;
+		signals.write_mar = inst_.write_mar;
+		signals.write_mdr = inst_.write_mdr;
+		signals.write_pc = inst_.write_pc;
+		signals.write_sp = inst_.write_sp;
+		signals.write_lv = inst_.write_lv;
+		signals.write_cpp = inst_.write_cpp;
+		signals.write_tos = inst_.write_tos;
+		signals.write_opc = inst_.write_opc;
+		signals.write_h = inst_.write_h;
 
 		// Read Signals (9)
-		assert(read < 9);
-		switch (read) {
-		case 0: {
+		assert(inst_.read <= 9);
+		switch (inst_.read) {
+		case READ_MDR: {
 			signals.read_mdr = 1;
 			break;
 		}
-		case 1: {
+		case READ_PC: {
 			signals.read_pc = 1;
 			break;
 		}
-		case 2: {
+		case READ_MBR_UNSIGNED: {
 			signals.read_mbr_unsigned = 1;
 			break;
 		}
-		case 3: {
+		case READ_MBR_SIGNED: {
 			signals.read_mbr_signed = 1;
 			break;
 		}
-		case 4: {
+		case READ_SP: {
 			signals.read_sp = 1;
 			break;
 		}
-		case 5: {
+		case READ_LV: {
 			signals.read_lv = 1;
 			break;
 		}
-		case 6: {
+		case READ_CPP: {
 			signals.read_cpp = 1;
 			break;
 		}
-		case 7: {
+		case READ_TOS: {
 			signals.read_tos = 1;
 			break;
 		}
-		case 8: {
+		case READ_OPC: {
 			signals.read_opc = 1;
 			break;
 		}
 		}
 
 		// Memory Signals (3)
-		signals.mem_rd = mem_rd;
-		signals.mem_wr = mem_wr;
-		signals.mem_fetch = mem_fetch;
+		signals.mem_rd = inst_.mem_rd;
+		signals.mem_wr = inst_.mem_wr;
+		signals.mem_fetch = inst_.mem_fetch;
 
 		return signals;
 	}
+
+	uint16_t GetNextAddress() const {
+		return inst_.next_address;
+	}
+
+	uint8_t GetJAMN() const {
+		return inst_.jamn;
+	}
+
+	uint8_t GetJAMZ() const {
+		return inst_.jamz;
+	}
+
+	uint8_t GetJMPC() const {
+		return inst_.jmpc;
+	}
+
+protected:
+	MicroInstructionEncoding inst_ = { 0 };
 };

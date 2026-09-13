@@ -3,17 +3,18 @@
 #include <cassert>
 #include <vector>
 
-#include "micro_instruction.h"
+#include "micro_instructions/micro_instructions.h"
 
 constexpr size_t CONTROL_MEMORY_SIZE = 512;
 
 class ControlMemory {
 public:
-	ControlMemory() : memory_(CONTROL_MEMORY_SIZE) {}
+	ControlMemory() : memory_(CONTROL_MEMORY_SIZE) {
+		memory_[NOP_ADDR] = NOPMicroInstruction();
+		
+		memory_[IADD_ADDR] = IADD1MicroInstruction();
 
-	// TODO: remove
-	void SetMicroInstruction(MicroInstruction inst) {
-		memory_[0] = inst;
+		memory_[MAIN_ADDR] = MAINMicroInstruction();
 	}
 
 public:
@@ -24,14 +25,14 @@ public:
 	}
 
 	void UpdateMPC(uint8_t n, uint8_t z, uint32_t mbr) {
-		mpc_ = mir_.next_address;
-		if (mir_.jamn == 1) {
+		mpc_ = mir_.GetNextAddress();
+		if (mir_.GetJAMN() == 1) {
 			mpc_ |= (n << 8);
 		}
-		if (mir_.jamz == 1) {
+		if (mir_.GetJAMZ() == 1) {
 			mpc_ |= (z << 8);
 		}
-		if (mir_.jmpc == 1) {
+		if (mir_.GetJMPC() == 1) {
 			mpc_ |= (mbr & 0xFF);
 		}
 	}
@@ -39,5 +40,5 @@ public:
 private:
 	std::vector<MicroInstruction> memory_;
 	uint16_t mpc_ = 0;
-	MicroInstruction mir_ = { 0 };
+	MicroInstruction mir_;
 };

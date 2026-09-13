@@ -1,6 +1,7 @@
 #pragma once
 
 #include "alu.h"
+#include "global_memory.h"
 #include "control_memory.h"
 #include "signals.h"
 
@@ -37,9 +38,8 @@ public:
 		return regs_;
 	}
 
-	// TODO: remove
-	void SetMicroInstruction(MicroInstruction inst) {
-		control_memory_.SetMicroInstruction(inst);
+	void SetProgram(const std::vector<uint8_t>& program) {
+
 	}
 
 private:
@@ -95,4 +95,5 @@ private:
 	Signals signals_ = { 0 };
 	ALU alu_;
 	ControlMemory control_memory_;
+	GlobalMemory global_memory_;
 };

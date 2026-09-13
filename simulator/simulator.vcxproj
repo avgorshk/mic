@@ -128,7 +128,12 @@
   <ItemGroup>
     <ClInclude Include="alu.h" />
     <ClInclude Include="control_memory.h" />
+    <ClInclude Include="global_memory.h" />
     <ClInclude Include="mic.h" />
+    <ClInclude Include="micro_instructions\iadd_micro_instructions.h" />
+    <ClInclude Include="micro_instructions\main_micro_instructions.h" />
+    <ClInclude Include="micro_instructions\micro_instructions.h" />
+    <ClInclude Include="micro_instructions\nop_micro_instructions.h" />
     <ClInclude Include="signals.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
