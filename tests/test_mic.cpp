@@ -40,9 +40,13 @@ TEST_CASE("Signed MBR To H") {
 	inst.read = 3;
 	inst.write_h = 1;
 
-	mic.SetMicroInstruction(inst);
-	mic.Cycle();
-	auto regs = mic.GetRegisters();
+	Registers regs = { 0 };
+	regs.mbr = -7;
 
-	CHECK(regs.h == 1);
+	mic.SetMicroInstruction(inst);
+	mic.SetRegisters(regs);
+	mic.Cycle();
+	regs = mic.GetRegisters();
+
+	CHECK(regs.h == -6);
 }

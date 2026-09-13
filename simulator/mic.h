@@ -29,6 +29,10 @@ public:
 		WriteRegisters();
 	}
 
+	void SetRegisters(Registers regs) {
+		regs_ = regs;
+	}
+
 	Registers GetRegisters() const {
 		return regs_;
 	}
