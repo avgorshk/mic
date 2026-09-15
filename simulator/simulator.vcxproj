@@ -131,6 +131,7 @@
     <ClInclude Include="global_memory.h" />
     <ClInclude Include="mic.h" />
     <ClInclude Include="micro_instructions\iadd_micro_instructions.h" />
+    <ClInclude Include="micro_instructions\iload_micro_instructions.h" />
     <ClInclude Include="micro_instructions\main_micro_instructions.h" />
     <ClInclude Include="micro_instructions\micro_instructions.h" />
     <ClInclude Include="micro_instructions\nop_micro_instructions.h" />

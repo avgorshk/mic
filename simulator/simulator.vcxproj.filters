@@ -45,6 +45,9 @@
     <ClInclude Include="micro_instructions\micro_instructions.h">
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
+    <ClInclude Include="micro_instructions\iload_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="micro_instruction.h">

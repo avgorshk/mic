@@ -9,11 +9,18 @@ TEST_CASE("Signals Size") {
 
 TEST_CASE("IADD") {
 	MIC mic;
-	std::vector<uint8_t> program = { IADD_ADDR };
 
+	std::vector<uint8_t> program = { ILOAD_ADDR, 0x2 };
 	mic.SetProgram(program);
+
+	std::vector<uint32_t> data = { 1, 2, 3 };
+	mic.SetData(data);
+	
+	mic.InitCycle();
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
+	mic.Cycle(); // ILOAD1
+	mic.Cycle(); // ILOAD2
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == 1);

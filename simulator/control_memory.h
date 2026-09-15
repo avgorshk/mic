@@ -12,6 +12,9 @@ public:
 	ControlMemory() : memory_(CONTROL_MEMORY_SIZE) {
 		memory_[NOP_ADDR] = NOPMicroInstruction();
 		
+		memory_[ILOAD_ADDR] = ILOAD1MicroInstruction();
+		memory_[ILOAD_ADDR + 1] = ILOAD2MicroInstruction();
+
 		memory_[IADD_ADDR] = IADD1MicroInstruction();
 
 		memory_[MAIN_ADDR] = MAINMicroInstruction();
