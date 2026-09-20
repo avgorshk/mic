@@ -1,6 +1,6 @@
 #pragma once
 
-#include "main_micro_instructions.h"
+#include "main_micro_instruction.h"
 
 constexpr uint32_t NOP_ADDR = 0x0;
 

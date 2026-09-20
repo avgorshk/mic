@@ -15,6 +15,8 @@ public:
 		memory_[ILOAD_ADDR] = ILOAD1MicroInstruction();
 		memory_[ILOAD_ADDR + 1] = ILOAD2MicroInstruction();
 		memory_[ILOAD_ADDR + 2] = ILOAD3MicroInstruction();
+		memory_[ILOAD_ADDR + 3] = ILOAD4MicroInstruction();
+		memory_[ILOAD_ADDR + 4] = ILOAD5MicroInstruction();
 
 		memory_[IADD_ADDR] = IADD1MicroInstruction();
 

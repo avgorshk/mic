@@ -39,7 +39,7 @@
     <ClInclude Include="micro_instructions\nop_micro_instructions.h">
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
-    <ClInclude Include="micro_instructions\main_micro_instructions.h">
+    <ClInclude Include="micro_instructions\main_micro_instruction.h">
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
     <ClInclude Include="micro_instructions\micro_instructions.h">

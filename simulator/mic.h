@@ -41,7 +41,7 @@ public:
 	}
 
 	void SetSP(uint32_t sp) {
-		regs_.sp = sp;
+		regs_.sp = global_memory_.GetData() + sp;
 	}
 
 	Registers GetRegisters() const {
@@ -54,6 +54,10 @@ public:
 
 	void SetData(const std::vector<uint32_t>& data) {
 		global_memory_.SetData(data);
+	}
+
+	std::vector<uint32_t> GetData(size_t size) {
+		return global_memory_.GetData(size);
 	}
 
 private:
@@ -105,11 +109,11 @@ private:
 		if (is_written) {
 			regs_.mbr = mbr;
 		}
-
 		uint32_t mdr = global_memory_.Read(signals_.mem_rd, regs_.mar, is_written);
 		if (is_written) {
 			regs_.mdr = mdr;
 		}
+		global_memory_.Write(signals_.mem_wr, regs_.mar, regs_.mdr);
 
 		control_memory_.UpdateMPC(alu_.GetN(), alu_.GetZ(), regs_.mbr);
 	}

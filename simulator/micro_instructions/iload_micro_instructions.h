@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../micro_instruction.h"
+#include "main_micro_instruction.h"
 
 constexpr uint32_t ILOAD_ADDR = 0x15;
 
@@ -50,5 +50,39 @@ public:
 		inst_.write_mar = 1;
 
 		inst_.next_address = ILOAD_ADDR + 3;
+	}
+};
+
+class ILOAD4MicroInstruction : public MicroInstruction {
+public:
+	ILOAD4MicroInstruction() {
+		ALUFunction alu = { 0 };
+		alu.func = ALUFunctionTypes::SUM;
+		alu.enb = 1;
+		alu.inc = 1;
+
+		inst_.alu = alu;
+		inst_.read = READ_PC;
+		inst_.write_pc = 1;
+
+		inst_.mem_fetch = 1;
+		inst_.mem_wr = 1;
+
+		inst_.next_address = ILOAD_ADDR + 4;
+	}
+};
+
+class ILOAD5MicroInstruction : public MicroInstruction {
+public:
+	ILOAD5MicroInstruction() {
+		ALUFunction alu = { 0 };
+		alu.func = ALUFunctionTypes::OR;
+		alu.enb = 1;
+
+		inst_.alu = alu;
+		inst_.read = READ_MDR;
+		inst_.write_tos = 1;
+
+		inst_.next_address = MAIN_ADDR;
 	}
 };
