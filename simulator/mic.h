@@ -24,9 +24,9 @@ public:
 
 public:
 	void InitCycle() {
-		regs_.cpp = global_memory_.GetCPP();
-		regs_.lv = global_memory_.GetLV();
 		regs_.pc = global_memory_.GetPC();
+		regs_.cpp = global_memory_.GetCPP();
+		regs_.lv = global_memory_.GetData();
 		signals_.mem_fetch = 1;
 		ReadRegisters();
 		RunALU();
@@ -40,8 +40,8 @@ public:
 		WriteRegisters();
 	}
 
-	void SetRegisters(Registers regs) {
-		regs_ = regs;
+	void SetSP(uint32_t sp) {
+		regs_.sp = sp;
 	}
 
 	Registers GetRegisters() const {
@@ -100,10 +100,15 @@ private:
 		if (signals_.write_sp) regs_.sp = bus_c_;
 		if (signals_.write_tos) regs_.tos = bus_c_;
 
-		// Read MBR from memory first
-		uint16_t fetch_result = global_memory_.Fetch(signals_.mem_fetch, regs_.pc);
-		if (fetch_result != 0xFFFF) {
-			regs_.mbr = static_cast<uint8_t>(fetch_result);
+		uint8_t is_written = 0;
+		uint8_t mbr = global_memory_.Fetch(signals_.mem_fetch, regs_.pc, is_written);
+		if (is_written) {
+			regs_.mbr = mbr;
+		}
+
+		uint32_t mdr = global_memory_.Read(signals_.mem_rd, regs_.mar, is_written);
+		if (is_written) {
+			regs_.mdr = mdr;
 		}
 
 		control_memory_.UpdateMPC(alu_.GetN(), alu_.GetZ(), regs_.mbr);
