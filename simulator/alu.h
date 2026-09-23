@@ -3,6 +3,33 @@
 #include <assert.h>
 #include <stdint.h>
 
+#define ALU_ASSIGN_B(INST) \
+	ALUFunction alu = { 0 }; \
+	alu.func = ALUFunctionTypes::OR; \
+	alu.enb = 1; \
+	INST.alu = alu;
+
+#define ALU_ADD(INST) \
+	ALUFunction alu = { 0 }; \
+	alu.func = ALUFunctionTypes::SUM; \
+	alu.ena = 1; \
+	alu.enb = 1; \
+	INST.alu = alu;
+
+#define ALU_INC_B(INST) \
+	ALUFunction alu = { 0 }; \
+	alu.func = ALUFunctionTypes::SUM; \
+	alu.enb = 1; \
+	alu.inc = 1; \
+	INST.alu = alu;
+
+#define ALU_DEC_B(INST) \
+	ALUFunction alu = { 0 }; \
+	alu.func = ALUFunctionTypes::SUM; \
+	alu.enb = 1; \
+	alu.inva = 1; \
+	INST.alu = alu;
+
 enum ALUFunctionTypes {
 	AND = 0,
 	OR = 1,

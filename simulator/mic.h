@@ -44,6 +44,10 @@ public:
 		regs_.sp = global_memory_.GetData() + sp;
 	}
 
+	void SetTOS(uint32_t tos) {
+		regs_.tos = tos;
+	}
+
 	Registers GetRegisters() const {
 		return regs_;
 	}
@@ -99,6 +103,7 @@ private:
 		if (signals_.write_h) regs_.h = bus_c_;
 		if (signals_.write_lv) regs_.lv = bus_c_;
 		if (signals_.write_mar) regs_.mar = bus_c_;
+		if (signals_.write_mdr) regs_.mdr = bus_c_;
 		if (signals_.write_opc) regs_.opc = bus_c_;
 		if (signals_.write_pc) regs_.pc = bus_c_;
 		if (signals_.write_sp) regs_.sp = bus_c_;

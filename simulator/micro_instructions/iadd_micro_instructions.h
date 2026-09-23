@@ -1,19 +1,13 @@
 #pragma once
 
-#include "../micro_instruction.h"
+#include "main_micro_instruction.h"
 
 constexpr uint32_t IADD_ADDR = 0x60;
 
 class IADD1MicroInstruction : public MicroInstruction {
 public:
 	IADD1MicroInstruction() {
-		ALUFunction alu = { 0 };
-		alu.func = ALUFunctionTypes::SUM;
-		alu.ena = 0;
-		alu.enb = 1;
-		alu.inva = 1;
-		alu.inc = 0;
-		inst_.alu = alu;
+		ALU_DEC_B(inst_);
 
 		inst_.read = READ_SP;
 		inst_.write_sp = 1;
@@ -22,5 +16,32 @@ public:
 		inst_.mem_rd = 1;
 
 		inst_.next_address = IADD_ADDR + 1;
+	}
+};
+
+class IADD2MicroInstruction : public MicroInstruction {
+public:
+	IADD2MicroInstruction() {
+		ALU_ASSIGN_B(inst_);
+
+		inst_.read = READ_TOS;
+		inst_.write_h = 1;
+
+		inst_.next_address = IADD_ADDR + 2;
+	}
+};
+
+class IADD3MicroInstruction : public MicroInstruction {
+public:
+	IADD3MicroInstruction() {
+		ALU_ADD(inst_);
+
+		inst_.read = READ_MDR;
+		inst_.write_tos = 1;
+		inst_.write_mdr = 1;
+
+		inst_.mem_wr = 1;
+
+		inst_.next_address = MAIN_ADDR;
 	}
 };

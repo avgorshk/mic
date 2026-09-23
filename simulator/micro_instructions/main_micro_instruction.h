@@ -7,12 +7,7 @@ constexpr uint32_t MAIN_ADDR = 0xFF;
 class MAINMicroInstruction : public MicroInstruction {
 public:
 	MAINMicroInstruction() {
-		ALUFunction alu = { 0 };
-		alu.func = ALUFunctionTypes::SUM;
-		alu.enb = 1;
-		alu.inc = 1;
-
-		inst_.alu = alu;
+		ALU_INC_B(inst_);
 		inst_.read = READ_PC;
 		inst_.write_pc = 1;
 		inst_.jmpc = 1;
