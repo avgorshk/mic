@@ -18,6 +18,13 @@ public:
 		memory_[ILOAD_ADDR + 3] = ILOAD4MicroInstruction();
 		memory_[ILOAD_ADDR + 4] = ILOAD5MicroInstruction();
 
+		memory_[ISTORE_ADDR] = ISTORE1MicroInstruction();
+		memory_[ISTORE_ADDR + 1] = ISTORE2MicroInstruction();
+		memory_[ISTORE_ADDR + 2] = ISTORE3MicroInstruction();
+		memory_[ISTORE_ADDR + 3] = ISTORE4MicroInstruction();
+		memory_[ISTORE_ADDR + 4] = ISTORE5MicroInstruction();
+		memory_[ISTORE_ADDR + 5] = ISTORE6MicroInstruction();
+
 		memory_[IADD_ADDR] = IADD1MicroInstruction();
 		memory_[IADD_ADDR + 1] = IADD2MicroInstruction();
 		memory_[IADD_ADDR + 2] = IADD3MicroInstruction();

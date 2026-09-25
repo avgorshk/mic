@@ -11,11 +11,12 @@ TEST_CASE("ILOAD") {
 	MIC mic;
 
 	std::vector<uint8_t> program = { ILOAD_ADDR, 0x2 };
-	mic.SetProgram(program);
-
 	std::vector<uint32_t> data = { 0, 10, 20, 30 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	mic.SetProgram(program);
 	mic.SetData(data);
-	mic.SetSP(static_cast<uint32_t>(data.size()) - 1);
+	mic.SetSP(sp);
 
 	mic.InitCycle();
 	mic.Cycle(); // NOP
@@ -27,9 +28,9 @@ TEST_CASE("ILOAD") {
 	mic.Cycle(); // ILOAD5
 	auto regs = mic.GetRegisters();
 
-	CHECK(regs.sp == regs.lv + data.size());
-	CHECK(regs.pc == 2);
-	CHECK(regs.tos == data[2]);
+	CHECK(regs.sp == regs.lv + sp + 1);
+	CHECK(regs.pc == program.size());
+	CHECK(regs.tos == data[program[1]]);
 
 	auto output = mic.GetData(data.size() + 1);
 	CHECK(output[data.size()] == regs.tos);
@@ -39,12 +40,13 @@ TEST_CASE("IADD") {
 	MIC mic;
 
 	std::vector<uint8_t> program = { IADD_ADDR };
-	mic.SetProgram(program);
-
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 20, 30 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	mic.SetProgram(program);
 	mic.SetData(data);
-	mic.SetSP(static_cast<uint32_t>(data.size()) - 1);
-	mic.SetTOS(data[data.size() - 1]);
+	mic.SetSP(sp);
+	mic.SetTOS(data[sp]);
 
 	mic.InitCycle();
 	mic.Cycle(); // NOP
@@ -55,10 +57,41 @@ TEST_CASE("IADD") {
 	mic.Cycle(); // MAIN
 	auto regs = mic.GetRegisters();
 
-	CHECK(regs.sp == regs.lv + data.size() - 2);
-	CHECK(regs.pc == 2);
-	CHECK(regs.tos == data[4] + data[5]);
+	CHECK(regs.sp == regs.lv + sp - 1);
+	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.tos == data[sp - 1] + data[sp]);
 
 	auto output = mic.GetData(data.size());
-	CHECK(output[data.size() - 2] == regs.tos);
+	CHECK(output[sp - 1] == regs.tos);
+}
+
+TEST_CASE("ISTORE") {
+	MIC mic;
+
+	std::vector<uint8_t> program = { ISTORE_ADDR, 0x1 };
+	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	mic.SetProgram(program);
+	mic.SetData(data);
+	mic.SetSP(sp);
+	mic.SetTOS(data[sp]);
+
+	mic.InitCycle();
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // ISTORE1
+	mic.Cycle(); // ISTORE2
+	mic.Cycle(); // ISTORE3
+	mic.Cycle(); // ISTORE4
+	mic.Cycle(); // ISTORE5
+	mic.Cycle(); // ISTORE6
+	auto regs = mic.GetRegisters();
+
+	CHECK(regs.sp == regs.lv + sp - 1);
+	CHECK(regs.pc == program.size());
+	CHECK(regs.tos == data[sp - 1]);
+
+	auto output = mic.GetData(data.size());
+	CHECK(output[program[1]] == data[sp]);
 }
