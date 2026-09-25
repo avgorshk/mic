@@ -95,3 +95,31 @@ TEST_CASE("ISTORE") {
 	auto output = mic.GetData(data.size());
 	CHECK(output[program[1]] == data[sp]);
 }
+
+TEST_CASE("BIPUSH") {
+	MIC mic;
+
+	std::vector<uint8_t> program = { BIPUSH_ADDR, 0x7 };
+	std::vector<uint32_t> data = { 0, 10, 20, 30 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	mic.SetProgram(program);
+	mic.SetData(data);
+	mic.SetSP(sp);
+
+	mic.InitCycle();
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // BIPUSH
+	mic.Cycle(); // BIPUSH
+	mic.Cycle(); // BIPUSH
+	mic.Cycle(); // MAIN
+	auto regs = mic.GetRegisters();
+
+	CHECK(regs.sp == regs.lv + sp + 1);
+	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.tos == program[1]);
+
+	auto output = mic.GetData(data.size() + 1);
+	CHECK(output[sp + 1] == program[1]);
+}

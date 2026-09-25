@@ -8,8 +8,7 @@ class MAINMicroInstruction : public MicroInstruction {
 public:
 	MAINMicroInstruction() {
 		ALU_INC_B(inst_);
-		inst_.read = READ_PC;
-		inst_.write_pc = 1;
+		REG_ASSIGN(inst_, PC, pc);
 		inst_.jmpc = 1;
 		inst_.mem_fetch = 1;
 	}

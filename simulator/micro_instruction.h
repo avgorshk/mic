@@ -134,3 +134,12 @@ public:
 protected:
 	MicroInstructionEncoding inst_ = { 0 };
 };
+
+#define REG_ASSIGN(INST, IN, OUT) \
+	INST.read = READ_##IN; \
+	INST.write_##OUT = 1;
+
+#define REG_ASSIGN2(INST, IN, OUT1, OUT2) \
+	INST.read = READ_##IN; \
+	INST.write_##OUT1 = 1; \
+	INST.write_##OUT2 = 1;
