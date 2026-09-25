@@ -135,6 +135,9 @@ protected:
 	MicroInstructionEncoding inst_ = { 0 };
 };
 
+#define REG_READ(INST, IN) \
+	INST.read = READ_##IN;
+
 #define REG_ASSIGN(INST, IN, OUT) \
 	INST.read = READ_##IN; \
 	INST.write_##OUT = 1;

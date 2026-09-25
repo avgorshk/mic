@@ -33,6 +33,13 @@ public:
 		memory_[IADD_ADDR + 1] = IADD2MicroInstruction();
 		memory_[IADD_ADDR + 2] = IADD3MicroInstruction();
 
+		memory_[IF_ICMPEQ_ADDR] = IF_ICMPEQ1MicroInstruction();
+		memory_[IF_ICMPEQ_ADDR + 1] = IF_ICMPEQ2MicroInstruction();
+		memory_[IF_ICMPEQ_ADDR + 2] = IF_ICMPEQ3MicroInstruction();
+		memory_[IF_ICMPEQ_ADDR + 3] = IF_ICMPEQ4MicroInstruction();
+		memory_[IF_ICMPEQ_ADDR + 4] = IF_ICMPEQ5MicroInstruction();
+		memory_[IF_ICMPEQ_ADDR + 5] = IF_ICMPEQ6MicroInstruction();
+
 		memory_[MAIN_ADDR] = MAINMicroInstruction();
 	}
 
@@ -45,6 +52,7 @@ public:
 
 	void UpdateMPC(uint8_t n, uint8_t z, uint32_t mbr) {
 		mpc_ = mir_.GetNextAddress();
+		assert(mpc_ <= 0xFF);
 		if (mir_.GetJAMN() == 1) {
 			mpc_ |= (n << 8);
 		}

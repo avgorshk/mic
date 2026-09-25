@@ -132,6 +132,7 @@
     <ClInclude Include="mic.h" />
     <ClInclude Include="micro_instructions\bipush_micro_instructions.h" />
     <ClInclude Include="micro_instructions\iadd_micro_instructions.h" />
+    <ClInclude Include="micro_instructions\if_icmpeq_micro_instructions.h" />
     <ClInclude Include="micro_instructions\iload_micro_instructions.h" />
     <ClInclude Include="micro_instructions\istore_micro_instructions.h" />
     <ClInclude Include="micro_instructions\main_micro_instruction.h" />

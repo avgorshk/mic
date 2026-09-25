@@ -123,3 +123,35 @@ TEST_CASE("BIPUSH") {
 	auto output = mic.GetData(data.size() + 1);
 	CHECK(output[sp + 1] == program[1]);
 }
+
+TEST_CASE("IF_ICMPEQ Equal") {
+	MIC mic;
+
+	std::vector<uint8_t> program = { IF_ICMPEQ_ADDR, 0xF };
+	std::vector<uint32_t> data = { 0, 10, 20, 30, 50, 50 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	mic.SetProgram(program);
+	mic.SetData(data);
+	mic.SetSP(sp);
+	mic.SetTOS(data[sp]);
+
+	mic.InitCycle();
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // IF_ICMPEQ
+	mic.Cycle(); // IF_ICMPEQ
+	mic.Cycle(); // IF_ICMPEQ
+	mic.Cycle(); // IF_ICMPEQ
+	mic.Cycle(); // IF_ICMPEQ
+	mic.Cycle(); // IF_ICMPEQ
+	mic.Cycle(); // MAIN
+	auto regs = mic.GetRegisters();
+
+	CHECK(regs.sp == regs.lv + sp + 1);
+	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.tos == program[1]);
+
+	auto output = mic.GetData(data.size() + 1);
+	CHECK(output[sp + 1] == program[1]);
+}
