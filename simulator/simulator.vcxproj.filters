@@ -36,7 +36,7 @@
     <ClInclude Include="micro_instructions\iadd_micro_instructions.h">
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
-    <ClInclude Include="micro_instructions\nop_micro_instructions.h">
+    <ClInclude Include="micro_instructions\nop_micro_instruction.h">
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
     <ClInclude Include="micro_instructions\main_micro_instruction.h">
@@ -55,6 +55,12 @@
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
     <ClInclude Include="micro_instructions\if_icmpeq_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\t_micro_instruction.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\goto_micro_instructions.h">
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
   </ItemGroup>

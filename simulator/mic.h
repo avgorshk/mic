@@ -20,13 +20,15 @@ struct Registers {
 
 class MIC {
 public:
-	MIC() {}
-
-public:
-	void InitCycle() {
+	MIC() {
 		regs_.pc = global_memory_.GetPC();
 		regs_.cpp = global_memory_.GetCPP();
 		regs_.lv = global_memory_.GetData();
+		regs_.sp = regs_.lv;
+	}
+
+public:
+	void InitCycle() {
 		signals_.mem_fetch = 1;
 		ReadRegisters();
 		RunALU();
@@ -41,7 +43,7 @@ public:
 	}
 
 	void SetSP(uint32_t sp) {
-		regs_.sp = global_memory_.GetData() + sp;
+		regs_.sp = regs_.lv + sp;
 	}
 
 	void SetTOS(uint32_t tos) {

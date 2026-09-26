@@ -148,7 +148,7 @@ TEST_CASE("IF_ICMPEQ Equal") {
 	mic.Cycle(); // MAIN
 	auto regs = mic.GetRegisters();
 
-	CHECK(regs.sp == regs.lv + sp + 1);
+	CHECK(regs.sp == regs.lv + sp - 2);
 	CHECK(regs.pc == program.size() + 1);
 	CHECK(regs.tos == program[1]);
 

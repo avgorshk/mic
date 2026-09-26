@@ -39,6 +39,20 @@
 	alu.inva = 1; \
 	INST.alu = alu;
 
+#define ALU_SLL8_B(INST) \
+	ALUFunction alu = { 0 }; \
+	alu.func = ALUFunctionTypes::OR; \
+	alu.enb = 1; \
+	alu.sll8 = 1; \
+	INST.alu = alu;
+
+#define ALU_OR(INST) \
+	ALUFunction alu = { 0 }; \
+	alu.func = ALUFunctionTypes::OR; \
+	alu.ena = 1; \
+	alu.enb = 1; \
+	INST.alu = alu;
+
 enum ALUFunctionTypes {
 	AND = 0,
 	OR = 1,
