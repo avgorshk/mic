@@ -27,7 +27,7 @@ class GOTO3MicroInstruction : public MicroInstruction {
 public:
 	GOTO3MicroInstruction() {
 		ALU_SLL8_B(inst_);
-		REG_ASSIGN(inst_, MBR_SIGNED, pc);
+		REG_ASSIGN(inst_, MBR_SIGNED, h);
 		inst_.next_address = GOTO_ADDR + 3;
 	}
 };

@@ -118,14 +118,9 @@ public:
 			result_ += 1;
 		}
 		
-		if (result_ == 0) {
-			z_ = 1;
-		}
-
 		uint32_t msb = (result_ >> 31) & 1;
-		if (msb == 1) {
-			n_ = 1;
-		}
+		n_ = (msb == 1) ? 1 : 0;
+		z_ = (result_ == 0) ? 1 : 0;
 	}
 
 	void Shift() {

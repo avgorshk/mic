@@ -40,7 +40,20 @@ public:
 		memory_[IF_ICMPEQ_ADDR + 4] = IF_ICMPEQ5MicroInstruction();
 		memory_[IF_ICMPEQ_ADDR + 5] = IF_ICMPEQ6MicroInstruction();
 
+		memory_[GOTO_ADDR] = GOTO1MicroInstruction();
+		memory_[GOTO_ADDR + 1] = GOTO2MicroInstruction();
+		memory_[GOTO_ADDR + 2] = GOTO3MicroInstruction();
+		memory_[GOTO_ADDR + 3] = GOTO4MicroInstruction();
+		memory_[GOTO_ADDR + 4] = GOTO5MicroInstruction();
+		memory_[GOTO_ADDR + 5] = GOTO6MicroInstruction();
+
+		memory_[F_ADDR] = F1MicroInstruction();
+		memory_[F_ADDR + 1] = F2MicroInstruction();
+		memory_[F_ADDR + 2] = F3MicroInstruction();
+
 		memory_[MAIN_ADDR] = MAINMicroInstruction();
+
+		memory_[T_ADDR] = TMicroInstruction();
 	}
 
 public:

@@ -136,6 +136,12 @@ TEST_CASE("ALUFunction Z") {
 	alu.Execute();
 	CHECK(alu.GetResult() == 0);
 	CHECK(alu.GetZ() == 1);
+
+	alu.SetInput(4, 4);
+	alu.SetFunction(ALUFunction{ ALUFunctionTypes::SUM, 1, 1, 0, 0, 0, 0 });
+	alu.Execute();
+	CHECK(alu.GetResult() == 8);
+	CHECK(alu.GetZ() == 0);
 }
 
 TEST_CASE("ALUFunction N") {
