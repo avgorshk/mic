@@ -189,3 +189,23 @@ TEST_CASE("IF_ICMPEQ Nonequal") {
 	CHECK(regs.mbr == GOTO_ADDR);
 	CHECK(regs.tos == data[sp - 2]);
 }
+
+TEST_CASE("GOTO") {
+	MIC mic;
+
+	std::vector<uint8_t> program = { GOTO_ADDR, 0x1, 0xAB, GOTO_ADDR };
+	mic.SetProgram(program);
+
+	mic.InitCycle();
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // GOTO
+	mic.Cycle(); // GOTO
+	mic.Cycle(); // GOTO
+	mic.Cycle(); // GOTO
+	mic.Cycle(); // GOTO
+	mic.Cycle(); // GOTO
+	auto regs = mic.GetRegisters();
+
+	CHECK(regs.pc == ((program[1] << 8) | program[2]));
+}
