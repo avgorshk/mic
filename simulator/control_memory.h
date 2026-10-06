@@ -51,6 +51,7 @@ public:
 		memory_[F_ADDR + 1] = F2MicroInstruction();
 		memory_[F_ADDR + 2] = F3MicroInstruction();
 
+		memory_[HALT_ADDR] = HALTMicroInstruction();
 		memory_[MAIN_ADDR] = MAINMicroInstruction();
 
 		memory_[T_ADDR] = TMicroInstruction();

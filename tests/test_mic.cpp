@@ -224,6 +224,28 @@ TEST_CASE("GOTO") {
 }
 
 TEST_CASE("Program") {
-	//MIC mic;
+	std::vector<uint32_t> data = { 0, 0, 1, 2 };
+	std::vector<uint8_t> program = {
+		ILOAD_ADDR, 0x02,
+		ILOAD_ADDR, 0x03,
+		IADD_ADDR,
+		ISTORE_ADDR, 0x01,
+		HALT_ADDR
+	};
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+
+	while (true) {
+		if (mic.Cycle()) break;
+	}
+
+	auto output = memory.GetData(data.size());
+	CHECK(output[1] == 3);
 }

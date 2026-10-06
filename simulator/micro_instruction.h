@@ -3,6 +3,8 @@
 #include "alu.h"
 #include "signals.h"
 
+constexpr uint16_t HALT_SIGNAL = 0xFE;
+
 enum MicroInstructionRead {
 	READ_MDR = 1,
 	READ_PC = 2,
@@ -129,6 +131,10 @@ public:
 
 	uint8_t GetJMPC() const {
 		return inst_.jmpc;
+	}
+
+	bool GetHalt() const {
+		return (inst_.next_address == HALT_SIGNAL);
 	}
 
 protected:

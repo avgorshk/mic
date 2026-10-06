@@ -33,11 +33,12 @@ public:
 	}
 
 public:
-	void Cycle() {
+	bool Cycle() {
 		SetSignals();
 		ReadRegisters();
 		RunALU();
 		WriteRegisters();
+		return halt_;
 	}
 
 	void SetSP(uint32_t sp) {
@@ -57,6 +58,7 @@ private:
 		MicroInstruction inst = control_memory_.LoadMIR();
 		signals_ = inst.GetSignals();
 		alu_.SetFunction(signals_.alu);
+		halt_ = inst.GetHalt();
 	}
 
 	void ReadRegisters() {
@@ -117,4 +119,5 @@ private:
 	ALU alu_;
 	ControlMemory control_memory_;
 	GlobalMemory* global_memory_ = nullptr;
+	bool halt_ = false;
 };
