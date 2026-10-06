@@ -20,21 +20,19 @@ struct Registers {
 
 class MIC {
 public:
-	MIC() {
-		regs_.pc = global_memory_.GetPC();
-		regs_.cpp = global_memory_.GetCPP();
-		regs_.lv = global_memory_.GetData();
+	MIC(GlobalMemory* global_memory) {
+		global_memory_ = global_memory;
+
+		regs_.pc = global_memory_->GetProgramSegmentAddress();
+		regs_.cpp = global_memory_->GetConstantSegmentAddress();
+		regs_.lv = global_memory_->GetDataSegmentAddress();
 		regs_.sp = regs_.lv;
+
+		uint8_t is_written = 0;
+		global_memory_->Fetch(1, regs_.pc, is_written);
 	}
 
 public:
-	void InitCycle() {
-		signals_.mem_fetch = 1;
-		ReadRegisters();
-		RunALU();
-		WriteRegisters();
-	}
-
 	void Cycle() {
 		SetSignals();
 		ReadRegisters();
@@ -43,7 +41,7 @@ public:
 	}
 
 	void SetSP(uint32_t sp) {
-		regs_.sp = regs_.lv + sp;
+		regs_.sp = sp;
 	}
 
 	void SetTOS(uint32_t tos) {
@@ -52,18 +50,6 @@ public:
 
 	Registers GetRegisters() const {
 		return regs_;
-	}
-
-	void SetProgram(const std::vector<uint8_t>& program) {
-		global_memory_.SetProgram(program);
-	}
-
-	void SetData(const std::vector<uint32_t>& data) {
-		global_memory_.SetData(data);
-	}
-
-	std::vector<uint32_t> GetData(size_t size) {
-		return global_memory_.GetData(size);
 	}
 
 private:
@@ -112,15 +98,15 @@ private:
 		if (signals_.write_tos) regs_.tos = bus_c_;
 
 		uint8_t is_written = 0;
-		uint8_t mbr = global_memory_.Fetch(signals_.mem_fetch, regs_.pc, is_written);
+		uint8_t mbr = global_memory_->Fetch(signals_.mem_fetch, regs_.pc, is_written);
 		if (is_written) {
 			regs_.mbr = mbr;
 		}
-		uint32_t mdr = global_memory_.Read(signals_.mem_rd, regs_.mar, is_written);
+		uint32_t mdr = global_memory_->Read(signals_.mem_rd, regs_.mar, is_written);
 		if (is_written) {
 			regs_.mdr = mdr;
 		}
-		global_memory_.Write(signals_.mem_wr, regs_.mar, regs_.mdr);
+		global_memory_->Write(signals_.mem_wr, regs_.mar, regs_.mdr);
 
 		control_memory_.UpdateMPC(alu_.GetN(), alu_.GetZ(), regs_.mbr);
 	}
@@ -130,5 +116,5 @@ private:
 	Signals signals_ = { 0 };
 	ALU alu_;
 	ControlMemory control_memory_;
-	GlobalMemory global_memory_;
+	GlobalMemory* global_memory_ = nullptr;
 };

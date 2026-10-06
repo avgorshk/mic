@@ -1,24 +1,30 @@
 #include "doctest.h"
 
+#include "global_memory.h"
 #include "mic.h"
 #include "micro_instructions/micro_instructions.h"
+
+constexpr uint32_t PROGRAM_SEGMENT_SIZE = 1024;   // 1 KB
+constexpr uint32_t CONSTANT_SEGMENT_SIZE = 1024;  // 1 KB
+constexpr uint32_t DATA_SEGMENT_SIZE = 2014;      // 1 KB
 
 TEST_CASE("Signals Size") {
 	CHECK(sizeof(Signals) == 4);
 }
 
 TEST_CASE("ILOAD") {
-	MIC mic;
-
 	std::vector<uint8_t> program = { ILOAD_ADDR, 0x2 };
 	std::vector<uint32_t> data = { 0, 10, 20, 30 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
-	mic.SetProgram(program);
-	mic.SetData(data);
-	mic.SetSP(sp);
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
 
-	mic.InitCycle();
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // ILOAD1
@@ -32,23 +38,24 @@ TEST_CASE("ILOAD") {
 	CHECK(regs.pc == program.size());
 	CHECK(regs.tos == data[program[1]]);
 
-	auto output = mic.GetData(data.size() + 1);
+	auto output = memory.GetData(data.size() + 1);
 	CHECK(output[data.size()] == regs.tos);
 }
 
 TEST_CASE("IADD") {
-	MIC mic;
-
 	std::vector<uint8_t> program = { IADD_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 20, 30 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
-	mic.SetProgram(program);
-	mic.SetData(data);
-	mic.SetSP(sp);
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.InitCycle();
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // IADD1
@@ -61,23 +68,24 @@ TEST_CASE("IADD") {
 	CHECK(regs.pc == program.size() + 1);
 	CHECK(regs.tos == data[sp - 1] + data[sp]);
 
-	auto output = mic.GetData(data.size());
+	auto output = memory.GetData(data.size());
 	CHECK(output[sp - 1] == regs.tos);
 }
 
 TEST_CASE("ISTORE") {
-	MIC mic;
-
 	std::vector<uint8_t> program = { ISTORE_ADDR, 0x1 };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
-	mic.SetProgram(program);
-	mic.SetData(data);
-	mic.SetSP(sp);
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.InitCycle();
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // ISTORE1
@@ -92,22 +100,23 @@ TEST_CASE("ISTORE") {
 	CHECK(regs.pc == program.size());
 	CHECK(regs.tos == data[sp - 1]);
 
-	auto output = mic.GetData(data.size());
+	auto output = memory.GetData(data.size());
 	CHECK(output[program[1]] == data[sp]);
 }
 
 TEST_CASE("BIPUSH") {
-	MIC mic;
-
 	std::vector<uint8_t> program = { BIPUSH_ADDR, 0x7 };
 	std::vector<uint32_t> data = { 0, 10, 20, 30 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
-	mic.SetProgram(program);
-	mic.SetData(data);
-	mic.SetSP(sp);
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
 
-	mic.InitCycle();
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // BIPUSH
@@ -120,23 +129,24 @@ TEST_CASE("BIPUSH") {
 	CHECK(regs.pc == program.size() + 1);
 	CHECK(regs.tos == program[1]);
 
-	auto output = mic.GetData(data.size() + 1);
+	auto output = memory.GetData(data.size() + 1);
 	CHECK(output[sp + 1] == program[1]);
 }
 
 TEST_CASE("IF_ICMPEQ Equal") {
-	MIC mic;
-
 	std::vector<uint8_t> program = { IF_ICMPEQ_ADDR, 0x1, 0xAB, GOTO_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 50, 50 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
-	mic.SetProgram(program);
-	mic.SetData(data);
-	mic.SetSP(sp);
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.InitCycle();
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // IF_ICMPEQ
@@ -159,18 +169,19 @@ TEST_CASE("IF_ICMPEQ Equal") {
 }
 
 TEST_CASE("IF_ICMPEQ Nonequal") {
-	MIC mic;
-
 	std::vector<uint8_t> program = { IF_ICMPEQ_ADDR, 0x1, 0xAB, GOTO_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 50, 60 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
-	mic.SetProgram(program);
-	mic.SetData(data);
-	mic.SetSP(sp);
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.InitCycle();
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // IF_ICMPEQ
@@ -191,12 +202,14 @@ TEST_CASE("IF_ICMPEQ Nonequal") {
 }
 
 TEST_CASE("GOTO") {
-	MIC mic;
-
 	std::vector<uint8_t> program = { GOTO_ADDR, 0x1, 0xAB, GOTO_ADDR };
-	mic.SetProgram(program);
+	
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
 
-	mic.InitCycle();
+	MIC mic(&memory);
+
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // GOTO
@@ -208,4 +221,9 @@ TEST_CASE("GOTO") {
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.pc == ((program[1] << 8) | program[2]));
+}
+
+TEST_CASE("Program") {
+	//MIC mic;
+
 }

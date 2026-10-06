@@ -6,69 +6,75 @@
 #include <cstring>
 #include <vector>
 
-constexpr uint32_t GLOBAL_MEMORY_SIZE    = 1024 * 1024; // 1 MB
-constexpr uint32_t PROGRAM_SEGMENT_SIZE  = 64 * 1024;   // 64 KB
-constexpr uint32_t CONSTANT_SEGMENT_SIZE = 64 * 1024;   // 64 KB
-constexpr uint32_t DATA_SEGMENT_SIZE =
-	GLOBAL_MEMORY_SIZE - PROGRAM_SEGMENT_SIZE - CONSTANT_SEGMENT_SIZE;
-
 class GlobalMemory {
 public:
-	GlobalMemory() : memory_(GLOBAL_MEMORY_SIZE) {}
+	GlobalMemory(
+		uint32_t program_segment_size,
+		uint32_t constant_segment_size,
+		uint32_t data_segment_size)
+		: program_segment_size_(program_segment_size),
+		  constant_segment_size_(constant_segment_size),
+		  data_segment_size_(data_segment_size) {
+		memory_.resize(GetSize());
+	}
 
 public:
+	uint32_t GetSize() const {
+		return program_segment_size_ + constant_segment_size_ + data_segment_size_;
+	}
+
 	void SetProgram(const std::vector<uint8_t>& program) {
-		assert(program.size() <= PROGRAM_SEGMENT_SIZE);
+		assert(program.size() <= program_segment_size_);
 		memcpy(
 			memory_.data(), program.data(),
 			program.size() * sizeof(uint8_t));
 	}
 
 	void SetData(const std::vector<uint32_t>& data) {
-		assert(data.size() * sizeof(uint32_t) <= DATA_SEGMENT_SIZE);
+		assert(data.size() * sizeof(uint32_t) <= data_segment_size_);
 		memcpy(
-			memory_.data() + PROGRAM_SEGMENT_SIZE + CONSTANT_SEGMENT_SIZE,
+			memory_.data() + program_segment_size_ + constant_segment_size_,
 			data.data(), data.size() * sizeof(uint32_t));
 	}
 
 	std::vector<uint32_t> GetData(size_t size) {
-		assert(size * sizeof(uint32_t) < DATA_SEGMENT_SIZE);
+		assert(size * sizeof(uint32_t) < data_segment_size_);
 		std::vector<uint32_t> data(size);
 		memcpy(
 			data.data(),
-			memory_.data() + PROGRAM_SEGMENT_SIZE + CONSTANT_SEGMENT_SIZE,
+			memory_.data() + program_segment_size_ + constant_segment_size_,
 			size * sizeof(uint32_t));
 		return data;
 	}
 
-	uint32_t GetPC() const {
+	uint32_t GetProgramSegmentAddress() const {
 		return 0;
 	}
 
-	uint32_t GetData() const {
-		uint32_t data = PROGRAM_SEGMENT_SIZE + CONSTANT_SEGMENT_SIZE;
-		assert((data & (sizeof(uint32_t) - 1)) == 0);
-		return data / sizeof(uint32_t);
-	}
-
-	uint32_t GetCPP() const {
-		uint32_t cpp = PROGRAM_SEGMENT_SIZE;
+	uint32_t GetConstantSegmentAddress() const {
+		uint32_t cpp = program_segment_size_;
 		assert((cpp & (sizeof(uint32_t) - 1)) == 0);
 		return cpp / sizeof(uint32_t);
+	}
+
+	uint32_t GetDataSegmentAddress() const {
+		uint32_t data = program_segment_size_ + constant_segment_size_;
+		assert((data & (sizeof(uint32_t) - 1)) == 0);
+		return data / sizeof(uint32_t);
 	}
 
 	uint8_t Fetch(uint8_t is_fetch, uint32_t pc, uint8_t& is_written) {
 		uint8_t mbr = 0;
 		is_written = 0;
 		if (is_fetch_) {
-			assert(fetch_pc_ < PROGRAM_SEGMENT_SIZE);
+			assert(fetch_pc_ < program_segment_size_);
 			mbr = memory_[fetch_pc_];
 			is_written = 1;
 			is_fetch_ = 0;
 		}
 		if (is_fetch) {
 			is_fetch_ = 1;
-			assert(pc < PROGRAM_SEGMENT_SIZE);
+			assert(pc < program_segment_size_);
 			fetch_pc_ = pc;
 		}
 		return mbr;
@@ -108,6 +114,9 @@ public:
 	}
 
 private:
+	uint32_t program_segment_size_ = 0;
+	uint32_t constant_segment_size_ = 0;
+	uint32_t data_segment_size_ = 0;
 	std::vector<uint8_t> memory_;
 
 	uint8_t is_fetch_ = 0;
