@@ -72,6 +72,15 @@
     <ClInclude Include="micro_instructions\isub_micro_instructions.h">
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
+    <ClInclude Include="micro_instructions\iand_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\ior_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\dup_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="micro_instruction.h">

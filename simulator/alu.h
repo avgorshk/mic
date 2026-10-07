@@ -46,6 +46,13 @@
 	alu.sll8 = 1; \
 	INST.alu = alu;
 
+#define ALU_AND(INST) \
+	ALUFunction alu = { 0 }; \
+	alu.func = ALUFunctionTypes::AND; \
+	alu.ena = 1; \
+	alu.enb = 1; \
+	INST.alu = alu;
+
 #define ALU_OR(INST) \
 	ALUFunction alu = { 0 }; \
 	alu.func = ALUFunctionTypes::OR; \

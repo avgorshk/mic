@@ -29,6 +29,9 @@ public:
 		memory_[ISTORE_ADDR + 4] = ISTORE5MicroInstruction();
 		memory_[ISTORE_ADDR + 5] = ISTORE6MicroInstruction();
 
+		memory_[DUP_ADDR] = DUP1MicroInstruction();
+		memory_[DUP_ADDR + 1] = DUP2MicroInstruction();
+
 		memory_[IADD_ADDR] = IADD1MicroInstruction();
 		memory_[IADD_ADDR + 1] = IADD2MicroInstruction();
 		memory_[IADD_ADDR + 2] = IADD3MicroInstruction();
@@ -36,6 +39,14 @@ public:
 		memory_[ISUB_ADDR] = ISUB1MicroInstruction();
 		memory_[ISUB_ADDR + 1] = ISUB2MicroInstruction();
 		memory_[ISUB_ADDR + 2] = ISUB3MicroInstruction();
+
+		memory_[IAND_ADDR] = IAND1MicroInstruction();
+		memory_[IAND_ADDR + 1] = IAND2MicroInstruction();
+		memory_[IAND_ADDR + 2] = IAND3MicroInstruction();
+
+		memory_[IOR_ADDR] = IOR1MicroInstruction();
+		memory_[IOR_ADDR + 1] = IOR2MicroInstruction();
+		memory_[IOR_ADDR + 2] = IOR3MicroInstruction();
 
 		memory_[IF_ICMPEQ_ADDR] = IF_ICMPEQ1MicroInstruction();
 		memory_[IF_ICMPEQ_ADDR + 1] = IF_ICMPEQ2MicroInstruction();

@@ -102,6 +102,94 @@ TEST_CASE("ISUB") {
 	CHECK(output[sp - 1] == regs.tos);
 }
 
+TEST_CASE("IAND") {
+	std::vector<uint8_t> program = { IAND_ADDR };
+	std::vector<uint32_t> data = { 0, 10, 20, 30, 20, 30 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+	mic.SetTOS(data[sp]);
+
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // ISUB1
+	mic.Cycle(); // ISUB2
+	mic.Cycle(); // ISUB3
+	mic.Cycle(); // MAIN
+	auto regs = mic.GetRegisters();
+
+	CHECK(regs.sp == regs.lv + sp - 1);
+	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.tos == (data[sp - 1] & data[sp]));
+
+	auto output = memory.GetData(data.size());
+	CHECK(output[sp - 1] == regs.tos);
+}
+
+TEST_CASE("IOR") {
+	std::vector<uint8_t> program = { IOR_ADDR };
+	std::vector<uint32_t> data = { 0, 10, 20, 30, 20, 30 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+	mic.SetTOS(data[sp]);
+
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // ISUB1
+	mic.Cycle(); // ISUB2
+	mic.Cycle(); // ISUB3
+	mic.Cycle(); // MAIN
+	auto regs = mic.GetRegisters();
+
+	CHECK(regs.sp == regs.lv + sp - 1);
+	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.tos == (data[sp - 1] | data[sp]));
+
+	auto output = memory.GetData(data.size());
+	CHECK(output[sp - 1] == regs.tos);
+}
+
+TEST_CASE("DUP") {
+	std::vector<uint8_t> program = { DUP_ADDR };
+	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+	mic.SetTOS(data[sp]);
+
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // DUP1
+	mic.Cycle(); // DUP2
+	mic.Cycle(); // MAIN
+	auto regs = mic.GetRegisters();
+
+	CHECK(regs.sp == regs.lv + sp + 1);
+	CHECK(regs.pc == program.size() + 1);
+
+	auto output = memory.GetData(data.size() + 1);
+	CHECK(output[sp + 1] == data[sp]);
+}
+
 TEST_CASE("ISTORE") {
 	std::vector<uint8_t> program = { ISTORE_ADDR, 0x1 };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };
