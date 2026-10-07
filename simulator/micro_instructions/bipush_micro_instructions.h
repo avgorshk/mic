@@ -19,6 +19,7 @@ public:
 		ALU_INC_B(inst_);
 		REG_ASSIGN(inst_, PC, pc);
 		inst_.next_address = BIPUSH_ADDR + 2;
+		inst_.mem_fetch = 1;
 	}
 };
 

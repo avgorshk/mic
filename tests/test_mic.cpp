@@ -72,6 +72,36 @@ TEST_CASE("IADD") {
 	CHECK(output[sp - 1] == regs.tos);
 }
 
+TEST_CASE("ISUB") {
+	std::vector<uint8_t> program = { ISUB_ADDR };
+	std::vector<uint32_t> data = { 0, 10, 20, 30, 20, 30 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+	mic.SetTOS(data[sp]);
+
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // ISUB1
+	mic.Cycle(); // ISUB2
+	mic.Cycle(); // ISUB3
+	mic.Cycle(); // MAIN
+	auto regs = mic.GetRegisters();
+
+	CHECK(regs.sp == regs.lv + sp - 1);
+	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.tos == data[sp - 1] - data[sp]);
+
+	auto output = memory.GetData(data.size());
+	CHECK(output[sp - 1] == regs.tos);
+}
+
 TEST_CASE("ISTORE") {
 	std::vector<uint8_t> program = { ISTORE_ADDR, 0x1 };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };
@@ -223,13 +253,23 @@ TEST_CASE("GOTO") {
 	CHECK(regs.pc == ((program[1] << 8) | program[2]));
 }
 
-TEST_CASE("Program") {
+TEST_CASE("Program Equal") {
 	std::vector<uint32_t> data = { 0, 0, 1, 2 };
 	std::vector<uint8_t> program = {
 		ILOAD_ADDR, 0x02,
 		ILOAD_ADDR, 0x03,
 		IADD_ADDR,
 		ISTORE_ADDR, 0x01,
+		ILOAD_ADDR, 0x01,
+		BIPUSH_ADDR, 0x03,
+		IF_ICMPEQ_ADDR, 0x00, 0x0D,
+		ILOAD_ADDR, 0x02,
+		BIPUSH_ADDR, 0x01,
+		ISUB_ADDR,
+		ISTORE_ADDR, 0x02,
+		GOTO_ADDR, 0x00, 0x07,
+		BIPUSH_ADDR, 0x00,
+		ISTORE_ADDR, 0x03,
 		HALT_ADDR
 	};
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
@@ -247,5 +287,42 @@ TEST_CASE("Program") {
 	}
 
 	auto output = memory.GetData(data.size());
-	CHECK(output[1] == 3);
+	CHECK(output[3] == 0);
+}
+
+TEST_CASE("Program Nonequal") {
+	std::vector<uint32_t> data = { 0, 0, 5, 7 };
+	std::vector<uint8_t> program = {
+		ILOAD_ADDR, 0x02,
+		ILOAD_ADDR, 0x03,
+		IADD_ADDR,
+		ISTORE_ADDR, 0x01,
+		ILOAD_ADDR, 0x01,
+		BIPUSH_ADDR, 0x03,
+		IF_ICMPEQ_ADDR, 0x00, 0x0D,
+		ILOAD_ADDR, 0x02,
+		BIPUSH_ADDR, 0x01,
+		ISUB_ADDR,
+		ISTORE_ADDR, 0x02,
+		GOTO_ADDR, 0x00, 0x07,
+		BIPUSH_ADDR, 0x00,
+		ISTORE_ADDR, 0x03,
+		HALT_ADDR
+	};
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+
+	while (true) {
+		if (mic.Cycle()) break;
+	}
+
+	auto output = memory.GetData(data.size());
+	CHECK(output[2] == 4);
 }

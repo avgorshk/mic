@@ -33,6 +33,10 @@ public:
 		memory_[IADD_ADDR + 1] = IADD2MicroInstruction();
 		memory_[IADD_ADDR + 2] = IADD3MicroInstruction();
 
+		memory_[ISUB_ADDR] = ISUB1MicroInstruction();
+		memory_[ISUB_ADDR + 1] = ISUB2MicroInstruction();
+		memory_[ISUB_ADDR + 2] = ISUB3MicroInstruction();
+
 		memory_[IF_ICMPEQ_ADDR] = IF_ICMPEQ1MicroInstruction();
 		memory_[IF_ICMPEQ_ADDR + 1] = IF_ICMPEQ2MicroInstruction();
 		memory_[IF_ICMPEQ_ADDR + 2] = IF_ICMPEQ3MicroInstruction();
