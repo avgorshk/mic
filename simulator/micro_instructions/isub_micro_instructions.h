@@ -2,7 +2,7 @@
 
 #include "main_micro_instruction.h"
 
-constexpr uint32_t ISUB_ADDR = 0x64;
+constexpr uint32_t ISUB_ADDR = 0x65;
 
 class ISUB1MicroInstruction : public MicroInstruction {
 public:

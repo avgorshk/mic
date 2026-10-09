@@ -9,6 +9,12 @@
 	alu.enb = 1; \
 	INST.alu = alu;
 
+#define ALU_ASSIGN_H(INST) \
+	ALUFunction alu = { 0 }; \
+	alu.func = ALUFunctionTypes::OR; \
+	alu.ena = 1; \
+	INST.alu = alu;
+
 #define ALU_ADD(INST) \
 	ALUFunction alu = { 0 }; \
 	alu.func = ALUFunctionTypes::SUM; \

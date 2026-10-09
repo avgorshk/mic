@@ -104,11 +104,11 @@ private:
 		if (is_written) {
 			regs_.mbr = mbr;
 		}
+		global_memory_->Write(signals_.mem_wr, regs_.mar, regs_.mdr);
 		uint32_t mdr = global_memory_->Read(signals_.mem_rd, regs_.mar, is_written);
 		if (is_written) {
 			regs_.mdr = mdr;
 		}
-		global_memory_->Write(signals_.mem_wr, regs_.mar, regs_.mdr);
 
 		control_memory_.UpdateMPC(alu_.GetN(), alu_.GetZ(), regs_.mbr);
 	}

@@ -2,7 +2,7 @@
 
 #include "main_micro_instruction.h"
 
-constexpr uint32_t IADD_ADDR = 0x60;
+constexpr uint32_t IADD_ADDR = 0x62;
 
 class IADD1MicroInstruction : public MicroInstruction {
 public:

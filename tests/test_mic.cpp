@@ -190,6 +190,64 @@ TEST_CASE("DUP") {
 	CHECK(output[sp + 1] == data[sp]);
 }
 
+TEST_CASE("POP") {
+	std::vector<uint8_t> program = { POP_ADDR };
+	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // POP1
+	mic.Cycle(); // POP2
+	mic.Cycle(); // POP3
+	auto regs = mic.GetRegisters();
+
+	CHECK(regs.sp == regs.lv + sp - 1);
+	CHECK(regs.pc == program.size());
+	CHECK(regs.tos == data[sp - 1]);
+}
+
+TEST_CASE("SWAP") {
+	std::vector<uint8_t> program = { SWAP_ADDR };
+	std::vector<uint32_t> data = { 0, 10, 20, 30, 40, 50 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+	mic.SetTOS(data[sp]);
+
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // SWAP1
+	mic.Cycle(); // SWAP2
+	mic.Cycle(); // SWAP3
+	mic.Cycle(); // SWAP4
+	mic.Cycle(); // SWAP5
+	mic.Cycle(); // SWAP6
+	auto regs = mic.GetRegisters();
+
+	CHECK(regs.sp == regs.lv + sp);
+	CHECK(regs.pc == program.size());
+	CHECK(regs.tos == data[sp - 1]);
+
+	auto output = memory.GetData(data.size());
+	CHECK(output[sp] == data[sp - 1]);
+	CHECK(output[sp - 1] == data[sp]);
+}
+
 TEST_CASE("ISTORE") {
 	std::vector<uint8_t> program = { ISTORE_ADDR, 0x1 };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };

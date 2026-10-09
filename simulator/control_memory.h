@@ -29,8 +29,19 @@ public:
 		memory_[ISTORE_ADDR + 4] = ISTORE5MicroInstruction();
 		memory_[ISTORE_ADDR + 5] = ISTORE6MicroInstruction();
 
+		memory_[POP_ADDR] = POP1MicroInstruction();
+		memory_[POP_ADDR + 1] = POP2MicroInstruction();
+		memory_[POP_ADDR + 2] = POP3MicroInstruction();
+
 		memory_[DUP_ADDR] = DUP1MicroInstruction();
 		memory_[DUP_ADDR + 1] = DUP2MicroInstruction();
+
+		memory_[SWAP_ADDR] = SWAP1MicroInstruction();
+		memory_[SWAP_ADDR + 1] = SWAP2MicroInstruction();
+		memory_[SWAP_ADDR + 2] = SWAP3MicroInstruction();
+		memory_[SWAP_ADDR + 3] = SWAP4MicroInstruction();
+		memory_[SWAP_ADDR + 4] = SWAP5MicroInstruction();
+		memory_[SWAP_ADDR + 5] = SWAP6MicroInstruction();
 
 		memory_[IADD_ADDR] = IADD1MicroInstruction();
 		memory_[IADD_ADDR + 1] = IADD2MicroInstruction();

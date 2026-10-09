@@ -2,7 +2,7 @@
 
 #include "main_micro_instruction.h"
 
-constexpr uint32_t DUP_ADDR = 0x59;
+constexpr uint32_t DUP_ADDR = 0x5A;
 
 class DUP1MicroInstruction : public MicroInstruction {
 public:
