@@ -87,6 +87,12 @@
     <ClInclude Include="micro_instructions\swap_micro_instructions.h">
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
+    <ClInclude Include="micro_instructions\wide_micro_instruction.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\wide_iload_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="micro_instruction.h">

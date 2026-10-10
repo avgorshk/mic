@@ -2,7 +2,7 @@
 
 #include "../micro_instruction.h"
 
-constexpr uint32_t HALT_ADDR = 0xFE;
+constexpr uint32_t HALT_ADDR = 0xFF;
 
 class HALTMicroInstruction : public MicroInstruction {
 public:

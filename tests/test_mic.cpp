@@ -42,6 +42,39 @@ TEST_CASE("ILOAD") {
 	CHECK(output[data.size()] == regs.tos);
 }
 
+TEST_CASE("WIDE_ILOAD") {
+	std::vector<uint8_t> program = { WIDE_ADDR, ILOAD_ADDR, 0x0, 0x2 };
+	std::vector<uint32_t> data = { 0, 10, 20, 30 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // WIDE
+	mic.Cycle(); // WIDE_ILOAD1
+	mic.Cycle(); // WIDE_ILOAD2
+	mic.Cycle(); // WIDE_ILOAD3
+	mic.Cycle(); // WIDE_ILOAD4
+	mic.Cycle(); // ILOAD3
+	mic.Cycle(); // ILOAD4
+	mic.Cycle(); // ILOAD5
+	auto regs = mic.GetRegisters();
+
+	auto varnum = (program[2] << 8) | program[3];
+	CHECK(regs.sp == regs.lv + sp + 1);
+	CHECK(regs.pc == program.size());
+	CHECK(regs.tos == data[varnum]);
+
+	auto output = memory.GetData(data.size() + 1);
+	CHECK(output[data.size()] == regs.tos);
+}
+
 TEST_CASE("IADD") {
 	std::vector<uint8_t> program = { IADD_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 20, 30 };
@@ -471,4 +504,41 @@ TEST_CASE("Program Nonequal") {
 
 	auto output = memory.GetData(data.size());
 	CHECK(output[2] == 4);
+}
+
+TEST_CASE("Program Equal Wide Load") {
+	std::vector<uint32_t> data = { 0, 0, 1, 2 };
+	std::vector<uint8_t> program = {
+		ILOAD_ADDR, 0x02,
+		ILOAD_ADDR, 0x03,
+		IADD_ADDR,
+		ISTORE_ADDR, 0x01,
+		WIDE_ADDR, ILOAD_ADDR, 0x00, 0x01,
+		BIPUSH_ADDR, 0x03,
+		IF_ICMPEQ_ADDR, 0x00, 0x0D,
+		ILOAD_ADDR, 0x02,
+		BIPUSH_ADDR, 0x01,
+		ISUB_ADDR,
+		ISTORE_ADDR, 0x02,
+		GOTO_ADDR, 0x00, 0x07,
+		BIPUSH_ADDR, 0x00,
+		ISTORE_ADDR, 0x03,
+		HALT_ADDR
+	};
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+
+	while (true) {
+		if (mic.Cycle()) break;
+	}
+
+	auto output = memory.GetData(data.size());
+	CHECK(output[3] == 0);
 }

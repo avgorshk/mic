@@ -73,12 +73,19 @@ public:
 		memory_[GOTO_ADDR + 4] = GOTO5MicroInstruction();
 		memory_[GOTO_ADDR + 5] = GOTO6MicroInstruction();
 
+		memory_[WIDE_ADDR] = WIDEMicroInstruction();
+
 		memory_[F_ADDR] = F1MicroInstruction();
 		memory_[F_ADDR + 1] = F2MicroInstruction();
 		memory_[F_ADDR + 2] = F3MicroInstruction();
 
 		memory_[HALT_ADDR] = HALTMicroInstruction();
 		memory_[MAIN_ADDR] = MAINMicroInstruction();
+
+		memory_[WIDE_ILOAD_ADDR] = WIDE_ILOAD1MicroInstruction();
+		memory_[WIDE_ILOAD_ADDR + 1] = WIDE_ILOAD2MicroInstruction();
+		memory_[WIDE_ILOAD_ADDR + 2] = WIDE_ILOAD3MicroInstruction();
+		memory_[WIDE_ILOAD_ADDR + 3] = WIDE_ILOAD4MicroInstruction();
 
 		memory_[T_ADDR] = TMicroInstruction();
 	}
@@ -92,7 +99,7 @@ public:
 
 	void UpdateMPC(uint8_t n, uint8_t z, uint32_t mbr) {
 		mpc_ = mir_.GetNextAddress();
-		assert(mpc_ <= 0xFF);
+		assert(mpc_ <= 0x1FF);
 		if (mir_.GetJAMN() == 1) {
 			mpc_ |= (n << 8);
 		}

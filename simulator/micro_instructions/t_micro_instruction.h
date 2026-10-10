@@ -1,8 +1,9 @@
 #pragma once
 
 #include "goto_micro_instructions.h"
+#include "f_micro_instructions.h"
 
-constexpr uint32_t T_ADDR = 0x1F0;
+constexpr uint32_t T_ADDR = (F_ADDR | 0x100);
 
 class TMicroInstruction : public MicroInstruction {
 public:

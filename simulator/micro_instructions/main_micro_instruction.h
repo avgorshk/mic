@@ -2,7 +2,7 @@
 
 #include "../micro_instruction.h"
 
-constexpr uint32_t MAIN_ADDR = 0xFF;
+constexpr uint32_t MAIN_ADDR = 0x100;
 
 class MAINMicroInstruction : public MicroInstruction {
 public:
