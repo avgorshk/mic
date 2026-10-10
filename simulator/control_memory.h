@@ -16,6 +16,11 @@ public:
 		memory_[BIPUSH_ADDR + 1] = BIPUSH2MicroInstruction();
 		memory_[BIPUSH_ADDR + 2] = BIPUSH3MicroInstruction();
 
+		memory_[LDC_W_ADDR] = LDC_W1MicroInstruction();
+		memory_[LDC_W_ADDR + 1] = LDC_W2MicroInstruction();
+		memory_[LDC_W_ADDR + 2] = LDC_W3MicroInstruction();
+		memory_[LDC_W_ADDR + 3] = LDC_W4MicroInstruction();
+
 		memory_[ILOAD_ADDR] = ILOAD1MicroInstruction();
 		memory_[ILOAD_ADDR + 1] = ILOAD2MicroInstruction();
 		memory_[ILOAD_ADDR + 2] = ILOAD3MicroInstruction();

@@ -96,6 +96,9 @@
     <ClInclude Include="micro_instructions\wide_istore_micro_instructions.h">
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
+    <ClInclude Include="micro_instructions\ldc_w_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="micro_instruction.h">

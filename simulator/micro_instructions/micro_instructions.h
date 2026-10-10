@@ -12,6 +12,7 @@
 #include "ior_micro_instructions.h"
 #include "istore_micro_instructions.h"
 #include "isub_micro_instructions.h"
+#include "ldc_w_micro_instructions.h"
 #include "main_micro_instruction.h"
 #include "nop_micro_instruction.h"
 #include "pop_micro_instructions.h"

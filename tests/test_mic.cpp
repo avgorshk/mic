@@ -468,6 +468,38 @@ TEST_CASE("GOTO") {
 	CHECK(regs.pc == ((program[1] << 8) | program[2]));
 }
 
+TEST_CASE("LDC_W") {
+	std::vector<uint8_t> program = { LDC_W_ADDR, 0x0, 0x1 };
+	std::vector<uint32_t> data = { 0, 10, 20, 30 };
+	std::vector<uint32_t> constants = { 7, 8 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+	memory.SetConstants(constants);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // LDC_W1
+	mic.Cycle(); // LDC_W2
+	mic.Cycle(); // LDC_W3
+	mic.Cycle(); // LDC_W4
+	mic.Cycle(); // ILOAD3
+	mic.Cycle(); // ILOAD4
+	mic.Cycle(); // ILOAD5
+	auto regs = mic.GetRegisters();
+
+	auto index = ((program[1] << 8) | program[2]);
+	CHECK(regs.pc == program.size());
+	CHECK(regs.sp == regs.lv + sp + 1);
+	CHECK(regs.tos == constants[index]);
+}
+
 TEST_CASE("Program Equal") {
 	std::vector<uint32_t> data = { 0, 0, 1, 2 };
 	std::vector<uint8_t> program = {

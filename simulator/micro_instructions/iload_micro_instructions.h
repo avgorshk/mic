@@ -2,7 +2,7 @@
 
 #include "main_micro_instruction.h"
 
-constexpr uint32_t ILOAD_ADDR = 0x15;
+constexpr uint32_t ILOAD_ADDR = 0x17;
 
 class ILOAD1MicroInstruction : public MicroInstruction {
 public:

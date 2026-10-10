@@ -30,6 +30,13 @@ public:
 			program.size() * sizeof(uint8_t));
 	}
 
+	void SetConstants(const std::vector<uint32_t>& constants) {
+		assert(constants.size() * sizeof(uint32_t) <= constant_segment_size_);
+		memcpy(
+			memory_.data() + program_segment_size_,
+			constants.data(), constants.size() * sizeof(uint32_t));
+	}
+
 	void SetData(const std::vector<uint32_t>& data) {
 		assert(data.size() * sizeof(uint32_t) <= data_segment_size_);
 		memcpy(
