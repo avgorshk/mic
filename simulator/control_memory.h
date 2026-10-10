@@ -87,6 +87,11 @@ public:
 		memory_[WIDE_ILOAD_ADDR + 2] = WIDE_ILOAD3MicroInstruction();
 		memory_[WIDE_ILOAD_ADDR + 3] = WIDE_ILOAD4MicroInstruction();
 
+		memory_[WIDE_ISTORE_ADDR] = WIDE_ISTORE1MicroInstruction();
+		memory_[WIDE_ISTORE_ADDR + 1] = WIDE_ISTORE2MicroInstruction();
+		memory_[WIDE_ISTORE_ADDR + 2] = WIDE_ISTORE3MicroInstruction();
+		memory_[WIDE_ISTORE_ADDR + 3] = WIDE_ISTORE4MicroInstruction();
+
 		memory_[T_ADDR] = TMicroInstruction();
 	}
 

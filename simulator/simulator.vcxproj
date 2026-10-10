@@ -149,6 +149,7 @@
     <ClInclude Include="micro_instructions\swap_micro_instructions.h" />
     <ClInclude Include="micro_instructions\t_micro_instruction.h" />
     <ClInclude Include="micro_instructions\wide_iload_micro_instructions.h" />
+    <ClInclude Include="micro_instructions\wide_istore_micro_instructions.h" />
     <ClInclude Include="micro_instructions\wide_micro_instruction.h" />
     <ClInclude Include="signals.h" />
   </ItemGroup>

@@ -18,4 +18,5 @@
 #include "swap_micro_instructions.h"
 #include "t_micro_instruction.h"
 #include "wide_iload_micro_instructions.h"
+#include "wide_istore_micro_instructions.h"
 #include "wide_micro_instruction.h"

@@ -313,6 +313,42 @@ TEST_CASE("ISTORE") {
 	CHECK(output[program[1]] == data[sp]);
 }
 
+TEST_CASE("WIDE_ISTORE") {
+	std::vector<uint8_t> program = { WIDE_ADDR, ISTORE_ADDR, 0x0, 0x1 };
+	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+	mic.SetTOS(data[sp]);
+
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // WIDE
+	mic.Cycle(); // WIDE_ISTORE1
+	mic.Cycle(); // WIDE_ISTORE2
+	mic.Cycle(); // WIDE_ISTORE3
+	mic.Cycle(); // WIDE_ISTORE4
+	mic.Cycle(); // ISTORE3
+	mic.Cycle(); // ISTORE4
+	mic.Cycle(); // ISTORE5
+	mic.Cycle(); // ISTORE6
+	auto regs = mic.GetRegisters();
+
+	CHECK(regs.sp == regs.lv + sp - 1);
+	CHECK(regs.pc == program.size());
+	CHECK(regs.tos == data[sp - 1]);
+
+	auto varnum = (program[2] << 8) | program[3];
+	auto output = memory.GetData(data.size());
+	CHECK(output[varnum] == data[sp]);
+}
+
 TEST_CASE("BIPUSH") {
 	std::vector<uint8_t> program = { BIPUSH_ADDR, 0x7 };
 	std::vector<uint32_t> data = { 0, 10, 20, 30 };
@@ -506,7 +542,7 @@ TEST_CASE("Program Nonequal") {
 	CHECK(output[2] == 4);
 }
 
-TEST_CASE("Program Equal Wide Load") {
+TEST_CASE("Program Equal Wide") {
 	std::vector<uint32_t> data = { 0, 0, 1, 2 };
 	std::vector<uint8_t> program = {
 		ILOAD_ADDR, 0x02,
@@ -519,7 +555,7 @@ TEST_CASE("Program Equal Wide Load") {
 		ILOAD_ADDR, 0x02,
 		BIPUSH_ADDR, 0x01,
 		ISUB_ADDR,
-		ISTORE_ADDR, 0x02,
+		WIDE_ADDR, ISTORE_ADDR, 0x01, 0x02,
 		GOTO_ADDR, 0x00, 0x07,
 		BIPUSH_ADDR, 0x00,
 		ISTORE_ADDR, 0x03,
