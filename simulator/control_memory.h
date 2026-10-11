@@ -95,6 +95,38 @@ public:
 		memory_[GOTO_ADDR + 4] = GOTO5MicroInstruction();
 		memory_[GOTO_ADDR + 5] = GOTO6MicroInstruction();
 
+		memory_[IRETURN_ADDR] = IRETURN1MicroInstruction();
+		memory_[IRETURN_ADDR + 1] = IRETURN2MicroInstruction();
+		memory_[IRETURN_ADDR + 2] = IRETURN3MicroInstruction();
+		memory_[IRETURN_ADDR + 3] = IRETURN4MicroInstruction();
+		memory_[IRETURN_ADDR + 4] = IRETURN5MicroInstruction();
+		memory_[IRETURN_ADDR + 5] = IRETURN6MicroInstruction();
+		memory_[IRETURN_ADDR + 6] = IRETURN7MicroInstruction();
+		memory_[IRETURN_ADDR + 7] = IRETURN8MicroInstruction();
+
+		memory_[INVOKEVIRTUAL_ADDR] = INVOKEVIRTUAL1MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 1] = INVOKEVIRTUAL2MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 2] = INVOKEVIRTUAL3MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 3] = INVOKEVIRTUAL4MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 4] = INVOKEVIRTUAL5MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 5] = INVOKEVIRTUAL6MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 6] = INVOKEVIRTUAL7MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 7] = INVOKEVIRTUAL8MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 8] = INVOKEVIRTUAL9MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 9] = INVOKEVIRTUAL10MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 10] = INVOKEVIRTUAL11MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 11] = INVOKEVIRTUAL12MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 12] = INVOKEVIRTUAL13MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 13] = INVOKEVIRTUAL14MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 14] = INVOKEVIRTUAL15MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 15] = INVOKEVIRTUAL16MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 16] = INVOKEVIRTUAL17MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 17] = INVOKEVIRTUAL18MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 18] = INVOKEVIRTUAL19MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 19] = INVOKEVIRTUAL20MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 20] = INVOKEVIRTUAL21MicroInstruction();
+		memory_[INVOKEVIRTUAL_ADDR + 21] = INVOKEVIRTUAL22MicroInstruction();
+
 		memory_[WIDE_ADDR] = WIDEMicroInstruction();
 
 		memory_[F_ADDR] = F1MicroInstruction();

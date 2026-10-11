@@ -108,6 +108,12 @@
     <ClInclude Include="micro_instructions\ifeq_micro_instructions.h">
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
+    <ClInclude Include="micro_instructions\invokevirtual_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\ireturn_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="micro_instruction.h">

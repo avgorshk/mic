@@ -142,7 +142,9 @@
     <ClInclude Include="micro_instructions\if_icmpeq_micro_instructions.h" />
     <ClInclude Include="micro_instructions\iinc_micro_instructions.h" />
     <ClInclude Include="micro_instructions\iload_micro_instructions.h" />
+    <ClInclude Include="micro_instructions\invokevirtual_micro_instructions.h" />
     <ClInclude Include="micro_instructions\ior_micro_instructions.h" />
+    <ClInclude Include="micro_instructions\ireturn_micro_instructions.h" />
     <ClInclude Include="micro_instructions\istore_micro_instructions.h" />
     <ClInclude Include="micro_instructions\isub_micro_instructions.h" />
     <ClInclude Include="micro_instructions\ldc_w_micro_instructions.h" />

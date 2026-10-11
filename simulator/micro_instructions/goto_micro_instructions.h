@@ -2,7 +2,7 @@
 
 #include "main_micro_instruction.h"
 
-constexpr uint32_t GOTO_ADDR = 0xA7;
+constexpr uint32_t GOTO_ADDR = 0xA6;
 
 class GOTO1MicroInstruction : public MicroInstruction {
 public:

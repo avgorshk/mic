@@ -22,6 +22,14 @@
 	alu.enb = 1; \
 	INST.alu = alu;
 
+#define ALU_ADD_INC(INST) \
+	ALUFunction alu = { 0 }; \
+	alu.func = ALUFunctionTypes::SUM; \
+	alu.ena = 1; \
+	alu.enb = 1; \
+	alu.inc = 1; \
+	INST.alu = alu;
+
 #define ALU_SUB(INST) \
 	ALUFunction alu = { 0 }; \
 	alu.func = ALUFunctionTypes::SUM; \
