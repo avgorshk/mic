@@ -64,6 +64,23 @@ public:
 		memory_[IOR_ADDR + 1] = IOR2MicroInstruction();
 		memory_[IOR_ADDR + 2] = IOR3MicroInstruction();
 
+		memory_[IINC_ADDR] = IINC1MicroInstruction();
+		memory_[IINC_ADDR + 1] = IINC2MicroInstruction();
+		memory_[IINC_ADDR + 2] = IINC3MicroInstruction();
+		memory_[IINC_ADDR + 3] = IINC4MicroInstruction();
+		memory_[IINC_ADDR + 4] = IINC5MicroInstruction();
+		memory_[IINC_ADDR + 5] = IINC6MicroInstruction();
+
+		memory_[IFEQ_ADDR] = IFEQ1MicroInstruction();
+		memory_[IFEQ_ADDR + 1] = IFEQ2MicroInstruction();
+		memory_[IFEQ_ADDR + 2] = IFEQ3MicroInstruction();
+		memory_[IFEQ_ADDR + 3] = IFEQ4MicroInstruction();
+
+		memory_[IFLT_ADDR] = IFLT1MicroInstruction();
+		memory_[IFLT_ADDR + 1] = IFLT2MicroInstruction();
+		memory_[IFLT_ADDR + 2] = IFLT3MicroInstruction();
+		memory_[IFLT_ADDR + 3] = IFLT4MicroInstruction();
+
 		memory_[IF_ICMPEQ_ADDR] = IF_ICMPEQ1MicroInstruction();
 		memory_[IF_ICMPEQ_ADDR + 1] = IF_ICMPEQ2MicroInstruction();
 		memory_[IF_ICMPEQ_ADDR + 2] = IF_ICMPEQ3MicroInstruction();

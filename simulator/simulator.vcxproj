@@ -137,7 +137,10 @@
     <ClInclude Include="micro_instructions\halt_micro_instruction.h" />
     <ClInclude Include="micro_instructions\iadd_micro_instructions.h" />
     <ClInclude Include="micro_instructions\iand_micro_instructions.h" />
+    <ClInclude Include="micro_instructions\ifeq_micro_instructions.h" />
+    <ClInclude Include="micro_instructions\iflt_micro_instructions.h" />
     <ClInclude Include="micro_instructions\if_icmpeq_micro_instructions.h" />
+    <ClInclude Include="micro_instructions\iinc_micro_instructions.h" />
     <ClInclude Include="micro_instructions\iload_micro_instructions.h" />
     <ClInclude Include="micro_instructions\ior_micro_instructions.h" />
     <ClInclude Include="micro_instructions\istore_micro_instructions.h" />
