@@ -692,6 +692,75 @@ TEST_CASE("IFEQ Nonequal") {
 	CHECK(regs.tos == data[sp - 1]);
 }
 
+TEST_CASE("INVOKEVIRTUAL") {
+	constexpr uint8_t params_count = 0x3;
+	constexpr uint8_t local_vars_count = 0x4;
+	std::vector<uint8_t> program = {
+		INVOKEVIRTUAL_ADDR, 0x0, 0x1, 0x0,
+		/* new procedure*/
+		/* params count (2 bytes) */ 0x0, params_count,
+		/* local variables size (2 bytes) */ 0x0, local_vars_count,
+	    /* first instruction */ BIPUSH_ADDR };
+	std::vector<uint32_t> data = {
+		/* main procedure */
+		0, 10, 20, 30,
+		/* new procedure call */
+		/* OBJREF */ 0, /* param1 */ 70, /* param2 */ 80,
+		/* local vars */ };
+	std::vector<uint32_t> constants = { 0x0, 0x4 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	memory.SetData(data);
+	memory.SetConstants(constants);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+	mic.SetTOS(data[sp]);
+
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // INVOKEVIRTUAL1
+	mic.Cycle(); // INVOKEVIRTUAL2
+	mic.Cycle(); // INVOKEVIRTUAL3
+	mic.Cycle(); // INVOKEVIRTUAL4
+	mic.Cycle(); // INVOKEVIRTUAL5
+	mic.Cycle(); // INVOKEVIRTUAL6
+	mic.Cycle(); // INVOKEVIRTUAL7
+	mic.Cycle(); // INVOKEVIRTUAL8
+	mic.Cycle(); // INVOKEVIRTUAL9
+	mic.Cycle(); // INVOKEVIRTUAL10
+	mic.Cycle(); // INVOKEVIRTUAL11
+	mic.Cycle(); // INVOKEVIRTUAL12
+	mic.Cycle(); // INVOKEVIRTUAL13
+	mic.Cycle(); // INVOKEVIRTUAL14
+	mic.Cycle(); // INVOKEVIRTUAL15
+	mic.Cycle(); // INVOKEVIRTUAL16
+	mic.Cycle(); // INVOKEVIRTUAL17
+	mic.Cycle(); // INVOKEVIRTUAL18
+	mic.Cycle(); // INVOKEVIRTUAL19
+	mic.Cycle(); // INVOKEVIRTUAL20
+	mic.Cycle(); // INVOKEVIRTUAL21
+	mic.Cycle(); // INVOKEVIRTUAL22
+	mic.Cycle(); // MAIN
+	
+	auto output = memory.GetData(data.size() + local_vars_count + 1 /* pc */ + 1 /* lv */);
+	auto objref = output[4];
+	CHECK(objref == memory.GetDataSegmentAddress() + data.size() + local_vars_count);
+	auto called_proc_pc = output[data.size() + local_vars_count];
+	CHECK(called_proc_pc == 3);
+	auto called_proc_lv = output[data.size() + local_vars_count + 1];
+	CHECK(called_proc_lv == memory.GetDataSegmentAddress());
+	
+	auto regs = mic.GetRegisters();
+	CHECK(regs.sp == memory.GetDataSegmentAddress() + data.size() + local_vars_count + 1);
+	CHECK(regs.pc == program.size());
+	CHECK(regs.lv == memory.GetDataSegmentAddress() + 4);
+	CHECK(regs.mbr == BIPUSH_ADDR);
+}
+
 TEST_CASE("Program Equal") {
 	std::vector<uint32_t> data = { 0, 0, 1, 2 };
 	std::vector<uint8_t> program = {

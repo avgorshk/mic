@@ -2,7 +2,7 @@
 
 #include "main_micro_instruction.h"
 
-constexpr uint32_t INVOKEVIRTUAL_ADDR = 0xB6;
+constexpr uint32_t INVOKEVIRTUAL_ADDR = 0xB4;
 
 class INVOKEVIRTUAL1MicroInstruction : public MicroInstruction {
 public:

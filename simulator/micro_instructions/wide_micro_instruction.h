@@ -2,7 +2,7 @@
 
 #include "../micro_instruction.h"
 
-constexpr uint32_t WIDE_ADDR = 0xC4;
+constexpr uint32_t WIDE_ADDR = 0xCA;
 
 class WIDEMicroInstruction : public MicroInstruction {
 public:
