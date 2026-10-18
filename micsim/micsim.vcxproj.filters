@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="micro_instruction.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="alu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="control_memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="global_memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="signals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\bipush_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\dup_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\f_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\goto_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\halt_micro_instruction.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\iadd_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\iand_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\if_icmpeq_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\ifeq_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\iflt_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\iinc_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\iload_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\invokevirtual_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\ior_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\ireturn_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\istore_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\isub_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\ldc_w_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\main_micro_instruction.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\nop_micro_instruction.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\pop_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\swap_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\t_micro_instruction.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\wide_iload_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\wide_istore_micro_instructions.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="micro_instructions\wide_micro_instruction.h">
+      <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{e71b5ec5-67cd-495f-b9a3-ba0b0c2e3401}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\micro_instructions">
+      <UniqueIdentifier>{4ac7014b-647c-4492-b47b-0823c9a05635}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{cb45a66a-94e8-4ba6-84e4-699a3065f7bf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
