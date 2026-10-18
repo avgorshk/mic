@@ -5,6 +5,11 @@
 
 #include "mic.h"
 
+constexpr uint32_t SEGMENT_CHUNK = 1024; // 1 KB
+constexpr uint32_t PROGRAM_SEGMENT_SIZE = SEGMENT_CHUNK;
+constexpr uint32_t CONSTANT_SEGMENT_SIZE = SEGMENT_CHUNK;
+constexpr uint32_t DATA_SEGMENT_SIZE = SEGMENT_CHUNK;
+
 static void PrintError(const std::string& msg) {
     std::cerr << "[ERROR] " << msg << "\n";
     std::exit(1);
@@ -22,6 +27,22 @@ public:
             else if (a == "-i" || a == "--input") {
                 if (i + 1 >= argc) PrintError("missing value for " + a);
                 opts_["input"] = argv[++i];
+            }
+            else if (a == "-o" || a == "--output") {
+                if (i + 1 >= argc) PrintError("missing value for " + a);
+                opts_["output"] = argv[++i];
+            }
+            else if (a == "-p" || a == "--program-size") {
+                if (i + 1 >= argc) PrintError("missing value for " + a);
+                opts_["program-size"] = argv[++i];
+            }
+            else if (a == "-c" || a == "--constant-size") {
+                if (i + 1 >= argc) PrintError("missing value for " + a);
+                opts_["constant-size"] = argv[++i];
+            }
+            else if (a == "-d" || a == "--data-size") {
+                if (i + 1 >= argc) PrintError("missing value for " + a);
+                opts_["data-size"] = argv[++i];
             }
             else if (!a.empty() && a[0] == '-') {
                 PrintError("unknown option: " + a);
@@ -51,9 +72,12 @@ private:
 void PrintHelp() {
     std::cout << "micsim -i program.bin -o output.bin [options]" << std::endl;
     std::cout << "Options:" << std::endl;
-    std::cout << "\t--input (-i) \tInput program binary" << std::endl;
-    std::cout << "\t--help (-h)  \tPrint help message" << std::endl;
-    std::cout << "\t--output (-o)\tGlobal memory snapshot" << std::endl;
+    std::cout << "\t--input (-i)         Input program binary file name" << std::endl;
+    std::cout << "\t--help (-h)          Print help message" << std::endl;
+    std::cout << "\t--output (-o)        Result data segment file name" << std::endl;
+    std::cout << "\t--program-size (-p)  Program segment size (bytes)" << std::endl;
+    std::cout << "\t--constant-size (-c) Constants segment size (bytes)" << std::endl;
+    std::cout << "\t--data-size (-d)     Data segment size (bytes)" << std::endl;
 }
 
 std::vector<uint8_t> ReadBinary(const std::string& filename) {
@@ -77,23 +101,82 @@ std::vector<uint8_t> ReadBinary(const std::string& filename) {
     return buffer;
 }
 
+void WriteBinary(
+        const std::string& filename,
+        const std::vector<uint32_t>& data) {
+    std::ofstream file(filename, std::ios::binary | std::ios::trunc);
+    if (!file) {
+        PrintError("can't open " + filename + " for writing");
+    }
+
+    if (!data.empty()) {
+        file.write(reinterpret_cast<const char*>(data.data()),
+            static_cast<std::streamsize>(data.size() * sizeof(uint32_t)));
+    }
+
+    file.close();
+    if (!file) {
+        PrintError("write failed: " + filename);
+    }
+}
+
 int main(int argc, char* argv[]) {
     Args args(argc, argv);
     if (args.CheckFlag("help")) {
         PrintHelp();
+        return 0;
     }
 
-    auto program = args.GetOption("input");
-    if (program.empty()) {
+    auto program_file = args.GetOption("input");
+    if (program_file.empty()) {
         PrintHelp();
         PrintError("no program file");
     }
+    auto program = ReadBinary(program_file);
 
-    auto output = args.GetOption("output");
-    if (output.empty()) {
+    auto output_file = args.GetOption("output");
+    if (output_file.empty()) {
         PrintHelp();
         PrintError("no output file");
     }
 
+    uint32_t program_segment_size = PROGRAM_SEGMENT_SIZE;
+    auto program_size = args.GetOption("program-size");
+    if (!program_size.empty()) {
+        program_segment_size = std::stoul(program_size);
+    }
+    if (program.size() > program_segment_size) {
+        program_segment_size =
+            ((program.size() + SEGMENT_CHUNK - 1) / SEGMENT_CHUNK)
+            * SEGMENT_CHUNK;
+    }
 
+    uint32_t constant_segment_size = CONSTANT_SEGMENT_SIZE;
+    auto constant_size = args.GetOption("constant-size");
+    if (!constant_size.empty()) {
+        constant_segment_size = std::stoul(constant_size);
+    }
+    uint32_t data_segment_size = DATA_SEGMENT_SIZE;
+    auto data_size = args.GetOption("data-size");
+    if (!data_size.empty()) {
+        data_segment_size = std::stoul(data_size);
+    }
+
+    GlobalMemory memory(
+        program_segment_size, constant_segment_size, data_segment_size);
+    memory.SetProgram(program);
+    MIC mic(&memory);
+
+    uint64_t cycle_count = 0;
+    while (true) {
+        ++cycle_count;
+        if (mic.Cycle()) break;
+    }
+
+    auto data_segment_elementes = data_segment_size / sizeof(uint32_t);
+    auto output = memory.GetData(data_segment_elementes);
+    WriteBinary(output_file, output);
+
+    std::cout << "Cycles completed: " << cycle_count << std::endl;
+    std::cout << "Output written: " << output_file << std::endl;
 }

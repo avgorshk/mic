@@ -45,7 +45,7 @@ public:
 	}
 
 	std::vector<uint32_t> GetData(size_t size) {
-		assert(size * sizeof(uint32_t) < data_segment_size_);
+		assert(size * sizeof(uint32_t) <= data_segment_size_);
 		std::vector<uint32_t> data(size);
 		memcpy(
 			data.data(),

@@ -6,7 +6,7 @@
 
 constexpr uint32_t PROGRAM_SEGMENT_SIZE = 1024;   // 1 KB
 constexpr uint32_t CONSTANT_SEGMENT_SIZE = 1024;  // 1 KB
-constexpr uint32_t DATA_SEGMENT_SIZE = 2014;      // 1 KB
+constexpr uint32_t DATA_SEGMENT_SIZE = 1024;      // 1 KB
 
 TEST_CASE("Signals Size") {
 	CHECK(sizeof(Signals) == 4);
