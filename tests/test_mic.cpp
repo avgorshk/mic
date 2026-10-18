@@ -761,6 +761,57 @@ TEST_CASE("INVOKEVIRTUAL") {
 	CHECK(regs.mbr == BIPUSH_ADDR);
 }
 
+TEST_CASE("IRETURN") {
+	std::vector<uint8_t> program = { IRETURN_ADDR, 0, 0, BIPUSH_ADDR };
+	std::vector<uint32_t> data = {
+		/* main procedure */
+		0, 10, 20, 30,
+		/* new procedure call */
+		/* OBJREF */ 0, /* param1 */ 70, /* param2 */ 80,
+		/* local vars */ 0, 0, 0, 0,
+	    /* called proc pc */ 3,
+	    /* called proc lv */ 0,
+	    /* return value */ 0x7 };
+	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
+
+	GlobalMemory memory(
+		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+	memory.SetProgram(program);
+	uint32_t objref = memory.GetDataSegmentAddress() + 11;
+	data[4] = objref;
+	uint32_t called_proc_lv = memory.GetDataSegmentAddress();
+	data[12] = called_proc_lv;
+	memory.SetData(data);
+
+	MIC mic(&memory);
+	mic.SetSP(memory.GetDataSegmentAddress() + sp);
+	mic.SetTOS(data[sp]);
+	mic.SetLV(memory.GetDataSegmentAddress() + 4);
+
+	mic.Cycle(); // NOP
+	mic.Cycle(); // MAIN
+	mic.Cycle(); // IRETURN1
+	mic.Cycle(); // IRETURN2
+	mic.Cycle(); // IRETURN3
+	mic.Cycle(); // IRETURN4
+	mic.Cycle(); // IRETURN5
+	mic.Cycle(); // IRETURN6
+	mic.Cycle(); // IRETURN7
+	mic.Cycle(); // IRETURN8
+	mic.Cycle(); // MAIN
+
+	
+	auto output = memory.GetData(5);
+	auto retval = output[output.size() - 1];
+	CHECK(retval == data[13]);
+
+	auto regs = mic.GetRegisters();
+	CHECK(regs.sp == memory.GetDataSegmentAddress() + 4);
+	CHECK(regs.pc == 4);
+	CHECK(regs.lv == memory.GetDataSegmentAddress());
+	CHECK(regs.mbr == BIPUSH_ADDR);
+}
+
 TEST_CASE("Program Equal") {
 	std::vector<uint32_t> data = { 0, 0, 1, 2 };
 	std::vector<uint8_t> program = {

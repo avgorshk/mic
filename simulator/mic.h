@@ -49,6 +49,10 @@ public:
 		regs_.tos = tos;
 	}
 
+	void SetLV(uint32_t lv) {
+		regs_.lv = lv;
+	}
+
 	Registers GetRegisters() const {
 		return regs_;
 	}
