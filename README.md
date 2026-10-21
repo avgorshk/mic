@@ -10,6 +10,133 @@ MICC source (.micc)  ->  micc.py  ->  assembly (.asm)  ->  asm.py
     ->  program.bin + constants.bin  ->  micsim.exe  ->  output.bin
 ```
 
+## Getting started
+
+A complete walkthrough: clone the repo, build the simulator, take a
+known algorithm, compile it, run it, verify the result. The example
+program is the Collatz conjecture (3n+1): counting the steps for n = 27
+takes the classic 111 iterations.
+
+You need: Windows with Visual Studio (the projects use the v145
+toolset), Git, and Python 3. No Python packages are required.
+
+### Step 1: download the repo
+
+```
+git clone https://github.com/avgorshk/mic.git
+cd mic
+```
+
+### Step 2: build the simulator
+
+Either open `mic.sln` in Visual Studio and build (Ctrl+Shift+B, x64
+Debug), or from the command line:
+
+```
+"C:\Program Files\Microsoft Visual Studio\18\Insiders\MSBuild\Current\Bin\MSBuild.exe" mic.sln -restore -v:m -nologo -p:Configuration=Debug -p:Platform=x64
+```
+
+(If that path does not exist on your machine, open the Visual Studio
+Developer Command Prompt and run `msbuild mic.sln -restore -p:Configuration=Debug -p:Platform=x64`.)
+
+Sanity check -- the simulator's unit tests must pass:
+
+```
+.\x64\Debug\micsim_unit_tests.exe
+...
+[doctest] Status: SUCCESS!
+```
+
+### Step 3: take an interesting program
+
+Create `collatz.micc` (or use the one in `programs/`):
+
+```c
+/* Collatz conjecture: steps for n to reach 1. collatz(27) = 111. */
+
+int collatz(int n) {
+    int steps = 0;
+    while (n != 1) {
+        if (n % 2 == 0)
+            n = n / 2;
+        else
+            n = 3 * n + 1;
+        steps = steps + 1;
+    }
+    return steps;
+}
+
+int main() {
+    int r = collatz(27);
+    return r;
+}
+```
+
+This program uses `%`, `/`, `*`, comparisons, `while` and `if`/`else`,
+so it exercises the whole toolchain, including the runtime library.
+
+### Step 4: compile it
+
+```
+python compiler/micc.py collatz.micc -o collatz.asm
+```
+
+Open `collatz.asm` -- that is the assembly your program became. (Run
+`python compiler/micc.py collatz.micc` without `-o` to see the AST
+dump instead.)
+
+### Step 5: assemble it
+
+```
+python assembler/asm.py collatz.asm -p program.bin -c constants.bin
+program size: 431 bytes (method area included)
+constants: 4 entries (16 bytes)
+```
+
+This produces `program.bin` (the code) and `constants.bin` (the
+constant pool with the method pointers for `collatz`, `mul`, `div`,
+`mod`). Watch the assembler's warnings, if any.
+
+### Step 6: run it on the simulator
+
+```
+.\x64\Debug\micsim.exe -i program.bin -k constants.bin -o output.bin
+Cycles completed: 5296105
+Output written: output.bin
+```
+
+(About 5.3 million microcode cycles -- most of them the repeated-
+subtraction `div` doing `n / 2` on values up to 9232; the simulator
+still finishes in a couple of seconds. If a program ever runs away,
+add `--max-cycles 10000000`.)
+
+### Step 7: verify the result
+
+`output.bin` is the raw data segment as 32-bit little-endian words;
+word 0 is main's first local, i.e. the program's result:
+
+```
+python -c "import struct; print(struct.unpack('<I', open('output.bin','rb').read(4))[0])"
+111
+```
+
+111 steps -- Collatz confirmed on a machine with no multiply
+instruction. The `3 * n + 1` multiplication was executed by the
+shift-and-add `mul` routine from the runtime library, itself compiled
+by the toolchain.
+
+### Next steps
+
+- Run the full test suite: `python compiler_tests/test_e2e.py` (13
+  programs, MICC to machine end to end) and the other suites listed in
+  section 5.
+- Try the other programs in `programs/`: factorial, gcd, fibonacci
+  (recursive and iterative), nested calls, deep recursion.
+- Compare the two multiplication implementations:
+  `python compiler_tests/bench_mul.py`.
+- Peek at the generated assembly of any program: compile with `-o` and
+  read the `.asm`.
+
 ## 1. The machine (`micsim/`)
 
 - Datapath: one ALU, an H register, a B-bus multiplexer, 9 C-bus

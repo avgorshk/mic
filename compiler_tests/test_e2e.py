@@ -33,6 +33,7 @@ PROGRAMS = [
     ('cmp', 6, 'programs/cmp.micc'),
     ('logic', 3, 'programs/logic.micc'),
     ('arith', 25, 'programs/arith.micc'),
+    ('collatz', 111, 'programs/collatz.micc'),
     ('nested_call', 12, 'programs/nested_call.micc'),
     ('mul_neg', 12239, 'programs/mul_neg.micc'),
     ('deep_rec', 820, 'programs/deep_rec.micc'),
