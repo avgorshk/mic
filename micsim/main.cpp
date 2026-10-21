@@ -1,3 +1,4 @@
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -44,6 +45,14 @@ public:
                 if (i + 1 >= argc) PrintError("missing value for " + a);
                 opts_["data-size"] = argv[++i];
             }
+            else if (a == "-k" || a == "--constants") {
+                if (i + 1 >= argc) PrintError("missing value for " + a);
+                opts_["constants"] = argv[++i];
+            }
+            else if (a == "--max-cycles") {
+                if (i + 1 >= argc) PrintError("missing value for " + a);
+                opts_["max-cycles"] = argv[++i];
+            }
             else if (!a.empty() && a[0] == '-') {
                 PrintError("unknown option: " + a);
             }
@@ -78,6 +87,8 @@ void PrintHelp() {
     std::cout << "\t--program-size (-p)  Program segment size (bytes)" << std::endl;
     std::cout << "\t--constant-size (-c) Constants segment size (bytes)" << std::endl;
     std::cout << "\t--data-size (-d)     Data segment size (bytes)" << std::endl;
+    std::cout << "\t--constants (-k)     Constants segment file name" << std::endl;
+    std::cout << "\t--max-cycles         Abort after N cycles (0 = no limit)" << std::endl;
 }
 
 std::vector<uint8_t> ReadBinary(const std::string& filename) {
@@ -165,12 +176,52 @@ int main(int argc, char* argv[]) {
     GlobalMemory memory(
         program_segment_size, constant_segment_size, data_segment_size);
     memory.SetProgram(program);
+
+    auto constants_file = args.GetOption("constants");
+    if (!constants_file.empty()) {
+        std::ifstream file(constants_file, std::ios::binary | std::ios::ate);
+        if (!file) {
+            PrintError("can't open " + constants_file);
+        }
+        size_t size = file.tellg();
+        if (size > 0) {
+            if (size % sizeof(uint32_t) != 0) {
+                PrintError(
+                    "constants file size is not a multiple of 4 bytes: "
+                    + constants_file);
+            }
+            if (size > constant_segment_size) {
+                PrintError(
+                    "constants file is larger than the constants segment: "
+                    + constants_file);
+            }
+            file.seekg(0, std::ios::beg);
+            std::vector<uint8_t> raw(size);
+            if (!file.read(reinterpret_cast<char*>(raw.data()), size)) {
+                PrintError("read failed for " + constants_file);
+            }
+            std::vector<uint32_t> constants(size / sizeof(uint32_t));
+            memcpy(constants.data(), raw.data(), size);
+            memory.SetConstants(constants);
+        }
+    }
+
+    uint64_t max_cycles = 0;
+    auto max_cycles_opt = args.GetOption("max-cycles");
+    if (!max_cycles_opt.empty()) {
+        max_cycles = std::stoull(max_cycles_opt);
+    }
+
     MIC mic(&memory);
 
     uint64_t cycle_count = 0;
     while (true) {
         ++cycle_count;
         if (mic.Cycle()) break;
+        if (max_cycles != 0 && cycle_count >= max_cycles) {
+            PrintError(
+                "max cycles reached (" + std::to_string(max_cycles) + ")");
+        }
     }
 
     auto data_segment_elementes = data_segment_size / sizeof(uint32_t);

@@ -5,6 +5,8 @@ import sys
 BIPUSH = 0x10
 IADD = 0x62
 HALT = 0xFF
+LDC_W = 0x13
+ISTORE = 0x36
 
 def test_program(micsim):
     program = [BIPUSH, 0x7, BIPUSH, 0x8, IADD, HALT]
@@ -23,6 +25,40 @@ def test_program(micsim):
         data = list(struct.unpack(f"<{count}I", raw))
         assert data[1] == 0xF
 
+
+def test_constants_flag(micsim):
+    # ldc_w 0; istore 0; halt  ->  pushes constants[0] and stores it in
+    # main's local 0 (data segment word 0). Exercised via the -k flag.
+    program = [LDC_W, 0x0, 0x0, ISTORE, 0x0, HALT]
+    with open("ldc_program.bin", "wb") as f:
+        f.write(bytes(program))
+    with open("ldc_constants.bin", "wb") as f:
+        f.write(struct.pack("<I", 42))
+
+    cmd = [micsim, "-i", "ldc_program.bin", "-k", "ldc_constants.bin",
+           "-o", "ldc_output.bin"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+
+    with open("ldc_output.bin", "rb") as f:
+        raw = f.read()
+    data = list(struct.unpack("<%dI" % (len(raw) // 4), raw))
+    assert data[0] == 42
+
+
+def test_max_cycles_flag(micsim):
+    # a program that never halts must abort cleanly under --max-cycles
+    program = [0x00]  # nop -> main loop forever
+    with open("nop_program.bin", "wb") as f:
+        f.write(bytes(program))
+
+    cmd = [micsim, "-i", "nop_program.bin", "-o", "nop_output.bin",
+           "--max-cycles", "100"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 1
+    assert "max cycles reached" in result.stderr
+
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: micsim_tests.py <micsim_path>")
@@ -30,6 +66,8 @@ def main():
 
     micsim = sys.argv[1]
     test_program(micsim)
-    print("Passed: 1")
+    test_constants_flag(micsim)
+    test_max_cycles_flag(micsim)
+    print("Passed: 3")
 
 main()
