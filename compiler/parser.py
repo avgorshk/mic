@@ -255,15 +255,24 @@ class Parser:
 
     def _parse_unary(self):
         if (self._check('-') or self._check('!') or self._check('~')):
-            op = self._next()[0]
-            return ast.Unary(op, self._parse_unary())
+            op_tok = self._next()
+            operand = self._parse_unary()
+            # constant folding: -5 -> IntLit(-5), ~5 -> IntLit(-6), !5 -> 0/1
+            if isinstance(operand, ast.IntLit):
+                v = operand.value
+                if op_tok[0] == '-':
+                    return ast.IntLit(-v, op_tok[2])
+                if op_tok[0] == '~':
+                    return ast.IntLit(~v, op_tok[2])
+                return ast.IntLit(0 if v else 1, op_tok[2])
+            return ast.Unary(op_tok[0], operand)
         return self._parse_primary()
 
     def _parse_primary(self):
         tok = self._cur()
         if tok[0] == 'INTLIT':
             self._next()
-            return ast.IntLit(tok[1])
+            return ast.IntLit(tok[1], tok[2])
         if tok[0] == 'IDENT':
             name_tok = self._next()
             if self._check('('):
@@ -276,7 +285,7 @@ class Parser:
                             break
                         self._next()
                 self._expect(')', "')'")
-                return ast.Call(name_tok[1], args)
+                return ast.Call(name_tok[1], args, name_tok[2])
             self._check_declared(name_tok)
             return ast.Var(name_tok[1])
         if tok[0] == '(':

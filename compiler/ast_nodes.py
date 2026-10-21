@@ -72,8 +72,9 @@ class Unary(Node):
 
 
 class IntLit(Node):
-    def __init__(self, value):
+    def __init__(self, value, line):
         self.value = value
+        self.line = line
 
 
 class Var(Node):
@@ -82,9 +83,10 @@ class Var(Node):
 
 
 class Call(Node):
-    def __init__(self, name, args):
+    def __init__(self, name, args, line):
         self.name = name
         self.args = args
+        self.line = line
 
 
 def dump(node, indent=0):
