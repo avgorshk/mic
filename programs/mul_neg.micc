@@ -1,0 +1,9 @@
+/* mul_neg.micc -- negative operands and a multi-bit multiplier through
+   the shift-add runtime 'mul':
+   -7*6 + 3*-5 + -2*-4 + 3*4096 = -42 + -15 + 8 + 12288 = 12239.
+   Expected result: 12239 */
+
+int main() {
+    int r = -7 * 6 + 3 * -5 + -2 * -4 + 3 * 4096;
+    return r;
+}

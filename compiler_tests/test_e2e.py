@@ -34,6 +34,7 @@ PROGRAMS = [
     ('logic', 3),
     ('arith', 25),
     ('nested_call', 12),
+    ('mul_neg', 12239),
     ('deep_rec', 820),
 ]
 

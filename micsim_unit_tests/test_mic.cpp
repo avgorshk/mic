@@ -922,3 +922,59 @@ TEST_CASE("Program Equal Wide") {
 	auto output = memory.GetData(data.size());
 	CHECK(output[3] == 0);
 }
+
+TEST_CASE("ISHR") {
+	// ishr: TOS = TOS >> 1 (arithmetic, sign-filled)
+	std::vector<uint8_t> program = { ISHR_ADDR, HALT_ADDR };
+
+	// positive: 8 >> 1 = 4
+	{
+		GlobalMemory memory(
+			PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+		memory.SetProgram(program);
+
+		MIC mic(&memory);
+		mic.SetTOS(8);
+
+		mic.Cycle(); // NOP
+		mic.Cycle(); // MAIN
+		mic.Cycle(); // ISHR
+		auto regs = mic.GetRegisters();
+		CHECK(regs.tos == 4);
+	}
+
+	// negative: -4 >> 1 = -2 (0xFFFFFFFC >> 1 = 0xFFFFFFFE)
+	{
+		GlobalMemory memory(
+			PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+		memory.SetProgram(program);
+
+		MIC mic(&memory);
+		mic.SetTOS(0xFFFFFFFCu);
+
+		mic.Cycle(); // NOP
+		mic.Cycle(); // MAIN
+		mic.Cycle(); // ISHR
+		auto regs = mic.GetRegisters();
+		CHECK(regs.tos == 0xFFFFFFFEu);
+	}
+
+	// 1 >> 1 = 0, and 0 >> 1 = 0
+	{
+		GlobalMemory memory(
+			PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
+		memory.SetProgram(program);
+
+		MIC mic(&memory);
+		mic.SetTOS(1);
+
+		mic.Cycle(); // NOP
+		mic.Cycle(); // MAIN
+		mic.Cycle(); // ISHR
+		CHECK(mic.GetRegisters().tos == 0);
+
+		mic.Cycle(); // MAIN (fetch HALT)
+		auto regs = mic.GetRegisters();
+		CHECK(regs.mbr == HALT_ADDR);
+	}
+}

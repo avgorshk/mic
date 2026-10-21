@@ -40,11 +40,11 @@ OPCODES = {
     'pop': 0x57, 'dup': 0x5A, 'swap': 0x5C, 'iadd': 0x62, 'isub': 0x65,
     'iand': 0x7E, 'ior': 0x81, 'iinc': 0x84, 'ifeq': 0x97, 'iflt': 0x9B,
     'if_icmpeq': 0x9F, 'goto': 0xA6, 'ireturn': 0xAC, 'invokevirtual': 0xB4,
-    'wide': 0xCA, 'halt': 0xFF,
+    'ishr': 0x1C, 'wide': 0xCA, 'halt': 0xFF,
 }
 
 NO_OPERAND = {'nop', 'pop', 'dup', 'swap', 'iadd', 'isub', 'iand', 'ior',
-              'ireturn', 'halt'}
+              'ireturn', 'ishr', 'halt'}
 BRANCHES = {'ifeq', 'iflt', 'if_icmpeq', 'goto'}
 
 

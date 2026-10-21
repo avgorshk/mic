@@ -17,6 +17,7 @@
 #include "istore_micro_instructions.h"
 #include "isub_micro_instructions.h"
 #include "ireturn_micro_instructions.h"
+#include "ishr_micro_instruction.h"
 #include "ldc_w_micro_instructions.h"
 #include "main_micro_instruction.h"
 #include "nop_micro_instruction.h"

@@ -104,6 +104,8 @@ public:
 		memory_[IRETURN_ADDR + 6] = IRETURN7MicroInstruction();
 		memory_[IRETURN_ADDR + 7] = IRETURN8MicroInstruction();
 
+		memory_[ISHR_ADDR] = ISHRMicroInstruction();
+
 		memory_[INVOKEVIRTUAL_ADDR] = INVOKEVIRTUAL1MicroInstruction();
 		memory_[INVOKEVIRTUAL_ADDR + 1] = INVOKEVIRTUAL2MicroInstruction();
 		memory_[INVOKEVIRTUAL_ADDR + 2] = INVOKEVIRTUAL3MicroInstruction();

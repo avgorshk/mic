@@ -1,8 +1,14 @@
 ; Runtime library for compiled MICC programs.
 ; Appended to the generated assembly when the program uses '*', '/' or '%'.
 ;
-; mul(a, b): repeated addition. result = sign(b) * (|b| * a) via |b|
-;            additions; overflow wraps mod 2^32 (C-like).
+; mul(a, b): shift-and-add (schoolbook binary multiplication) using the
+;            'ishr' opcode (TOS >>= 1, arithmetic). The multiplier is held
+;            non-negative, so the arithmetic shift behaves as a logical
+;            shift and the loop terminates after at most 32 iterations.
+;            result = sign(a) xor sign(b) * (|a| * |b|); overflow wraps
+;            mod 2^32 (C-like). Cost: O(bit length of b), value-independent.
+;            The pre-ishr repeated-addition version is kept in
+;            runtime_lib_legacy.asm for comparison.
 ; div(a, b): repeated subtraction with truncation toward zero (C-style):
 ;            q = sign(a) xor sign(b) * (|a| // |b|). Division by zero loops
 ;            forever (same as C UB).
@@ -14,39 +20,77 @@
 
 .method mul
 .params 3
-.locals 2
+.locals 4                ; result=3, a_abs=4, b_abs=5, neg=6
     bipush 0
-    istore 3                ; r = 0
+    istore 3             ; result = 0
     bipush 0
-    istore 4                ; neg = 0
-    iload 2
-    iflt Lmul_neg
-    goto Lmul_loop
-Lmul_neg:
+    istore 6             ; neg = 0
+    iload 1
+    iflt Lmul_nega
+    goto Lmul_seta
+Lmul_nega:
     bipush 1
-    istore 4                ; neg = 1
+    istore 6             ; neg = 1
+    iload 1
+    bipush 0
+    swap
+    isub
+    istore 4             ; a_abs = -a
+    goto Lmul_setb
+Lmul_seta:
+    iload 1
+    istore 4             ; a_abs = a
+Lmul_setb:
+    iload 2
+    iflt Lmul_negb
+    goto Lmul_setb2
+Lmul_negb:
+    iload 6
+    ifeq Lmul_negb_set
+    bipush 0
+    istore 6             ; neg = 0 (flip)
+    goto Lmul_negb_abs
+Lmul_negb_set:
+    bipush 1
+    istore 6             ; neg = 1 (flip)
+Lmul_negb_abs:
     iload 2
     bipush 0
     swap
     isub
-    istore 2                ; b = -b (counter = |b|)
-Lmul_loop:
+    istore 5             ; b_abs = -b
+    goto Lmul_loop
+Lmul_setb2:
     iload 2
-    ifeq Lmul_sign          ; counter == 0 -> done
+    istore 5             ; b_abs = b
+Lmul_loop:
+    iload 5
+    ifeq Lmul_sign       ; b == 0 -> done
+    iload 5
+    bipush 1
+    iand
+    ifeq Lmul_skip       ; (b & 1) == 0
     iload 3
-    iload 1
+    iload 4
     iadd
-    istore 3                ; r += a
-    iinc 2, -1
+    istore 3             ; result += a
+Lmul_skip:
+    iload 4
+    iload 4
+    iadd
+    istore 4             ; a <<= 1 (a + a)
+    iload 5
+    ishr                 ; b >>= 1
+    istore 5
     goto Lmul_loop
 Lmul_sign:
-    iload 4
+    iload 6
     ifeq Lmul_ret
     iload 3
     bipush 0
     swap
     isub
-    istore 3                ; r = -r
+    istore 3             ; result = -result
 Lmul_ret:
     iload 3
     ireturn

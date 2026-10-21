@@ -343,6 +343,17 @@ ireturn
     assert prog[6:10] == bytes([0x00, 0x01, 0x00, 0x00]), prog[6:10].hex()
 
 
+def test_ishr_encoding():
+    prog, _ = asm.assemble('''
+.method main
+bipush 12
+ishr
+halt
+''')
+    # prologue: none (.locals 0); bipush 12, ishr, halt
+    assert prog == bytes([0x10, 0x0C, 0x1C, 0xFF]), prog.hex()
+
+
 def test_unknown_instruction():
     expect_error('''
 .method main
@@ -381,6 +392,7 @@ check('negative and hex constants', test_const_negative)
 check('invokevirtual by name creates entry', test_invokevirtual_name_creates_entry)
 check('invokevirtual reuses .const entry', test_invokevirtual_reuses_const_entry)
 check('invokevirtual index to non-method rejected', test_invokevirtual_idx_not_method)
+check('ishr encoding', test_ishr_encoding)
 check('.const unknown method rejected', test_const_unknown_method)
 check('.params defaults to 1', test_params_default)
 check('unknown instruction rejected', test_unknown_instruction)
