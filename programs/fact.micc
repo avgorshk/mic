@@ -1,0 +1,13 @@
+/* fact.micc -- recursive factorial (uses * -> runtime 'mul').
+   Expected result: 120 */
+
+int fact(int n) {
+    if (n == 0)
+        return 1;
+    return n * fact(n - 1);
+}
+
+int main() {
+    int r = fact(5);
+    return r;
+}

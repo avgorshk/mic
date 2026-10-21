@@ -163,6 +163,31 @@ int main() {
           Var c'''), got
 
 
+def test_multiplicative_associativity():
+    got = dump_src('''\
+int main() {
+    int a = 20;
+    int b = 10;
+    int c = 5;
+    int d = a / b * c;
+    int e = a * b / c;
+}
+''')
+    assert got.endswith('''\
+      VarDecl d
+        Binary *
+          Binary /
+            Var a
+            Var b
+          Var c
+      VarDecl e
+        Binary /
+          Binary *
+            Var a
+            Var b
+          Var c'''), got
+
+
 def test_logic_operators():
     got = dump_src('''\
 int main() {
@@ -374,6 +399,42 @@ int main() {
 ''', "unsupported type 'long' (only 'int' is supported)")
 
 
+def test_bitwise_precedence():
+    got = dump_src('''\
+int main() {
+    int a = 1;
+    int b = 2;
+    int c = 3;
+    int d = a | b & c;
+}
+''')
+    assert got.endswith('''\
+      VarDecl d
+        Binary |
+          Var a
+          Binary &
+            Var b
+            Var c'''), got
+
+
+def test_bitwise_vs_equality():
+    got = dump_src('''\
+int main() {
+    int a = 1;
+    int b = 2;
+    int c = 3;
+    int d = a & b == c;
+}
+''')
+    assert got.endswith('''\
+      VarDecl d
+        Binary &
+          Var a
+          Binary ==
+            Var b
+            Var c'''), got
+
+
 def test_missing_semicolon():
     expect_error('''\
 int main() {
@@ -400,8 +461,11 @@ check('precedence: * binds tighter than +', test_precedence_mul_over_add)
 check('precedence: + binds tighter than <', test_precedence_add_over_relational)
 check('unary binding', test_unary_binding)
 check('left associativity of -', test_left_associativity)
+check('left associativity of * /', test_multiplicative_associativity)
 check('&& || ! tree', test_logic_operators)
 check('parentheses override', test_parentheses_override)
+check('bitwise: & binds tighter than |', test_bitwise_precedence)
+check('bitwise: == binds tighter than &', test_bitwise_vs_equality)
 check('dangling else binds to nearest if', test_dangling_else)
 check('while + empty return', test_while_and_empty_return)
 check('call with args', test_call_with_args)

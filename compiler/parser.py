@@ -207,26 +207,40 @@ class Parser:
         return node
 
     def _parse_or(self):
-        node = self._parse_and()
+        node = self._parse_bitor()
         while self._check('&&'):
             self._next()
-            node = ast.Binary('&&', node, self._parse_and())
+            node = ast.Binary('&&', node, self._parse_bitor())
         return node
 
-    def _parse_and(self):
+    def _parse_bitor(self):
+        node = self._parse_bitand()
+        while self._check('|'):
+            self._next()
+            node = ast.Binary('|', node, self._parse_bitand())
+        return node
+
+    def _parse_bitand(self):
         node = self._parse_equality()
-        while self._check('==') or self._check('!='):
-            op = self._next()[0]
-            node = ast.Binary(op, node, self._parse_equality())
-            self._reject_comparison_chain()
+        while self._check('&'):
+            self._next()
+            node = ast.Binary('&', node, self._parse_equality())
         return node
 
     def _parse_equality(self):
         node = self._parse_relational()
+        while self._check('==') or self._check('!='):
+            op = self._next()[0]
+            node = ast.Binary(op, node, self._parse_relational())
+            self._reject_comparison_chain()
+        return node
+
+    def _parse_relational(self):
+        node = self._parse_additive()
         while (self._check('<') or self._check('<=') or self._check('>')
                or self._check('>=')):
             op = self._next()[0]
-            node = ast.Binary(op, node, self._parse_relational())
+            node = ast.Binary(op, node, self._parse_additive())
             self._reject_comparison_chain()
         return node
 
@@ -236,22 +250,19 @@ class Parser:
             raise CompileError(tok[2], tok[3],
                                'comparison operators cannot be chained')
 
-    def _parse_relational(self):
-        node = self._parse_additive()
-        while self._check('+') or self._check('-'):
-            op = self._next()[0]
-            node = ast.Binary(op, node, self._parse_additive())
-        return node
-
     def _parse_additive(self):
         node = self._parse_multiplicative()
-        while self._check('*') or self._check('/') or self._check('%'):
+        while self._check('+') or self._check('-'):
             op = self._next()[0]
             node = ast.Binary(op, node, self._parse_multiplicative())
         return node
 
     def _parse_multiplicative(self):
-        return self._parse_unary()
+        node = self._parse_unary()
+        while self._check('*') or self._check('/') or self._check('%'):
+            op = self._next()[0]
+            node = ast.Binary(op, node, self._parse_unary())
+        return node
 
     def _parse_unary(self):
         if (self._check('-') or self._check('!') or self._check('~')):

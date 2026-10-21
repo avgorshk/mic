@@ -31,6 +31,7 @@ class Codegen:
         self.func_table = {f.name: f for f in program.funcs}
         self.label_counter = 0
         self._is_main = False
+        self.runtime_used = set()  # runtime functions the program needs
         self.pool = []            # ('int', value) | ('method', name)
         self.int_index = {}       # int value -> pool index
         self.method_index = {}    # method name -> pool index
@@ -283,6 +284,7 @@ class Codegen:
     def _gen_call_to_runtime(self, expr, slots):
         """a * b  ->  bipush 0; a; b; invokevirtual <mul>"""
         func = {'*': 'mul', '/': 'div', '%': 'mod'}[expr.op]
+        self.runtime_used.add(func)
         self._emit('bipush 0')
         self._gen_expr(expr.left, slots)
         self._gen_expr(expr.right, slots)

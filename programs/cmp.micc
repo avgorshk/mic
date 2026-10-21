@@ -1,0 +1,19 @@
+/* cmp.micc -- all six comparison operators in condition context.
+   Expected result: 6 */
+
+int main() {
+    int r = 0;
+    if (5 > 3)
+        r = r + 1;
+    if (5 >= 5)
+        r = r + 1;
+    if (5 < 6)
+        r = r + 1;
+    if (5 <= 5)
+        r = r + 1;
+    if (5 == 5)
+        r = r + 1;
+    if (5 != 4)
+        r = r + 1;
+    return r;
+}

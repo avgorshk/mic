@@ -1,6 +1,14 @@
+import os
 import struct
 import subprocess
 import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                '..', 'compiler'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                '..', 'assembler'))
+import micc  # noqa: E402
+import asm  # noqa: E402
 
 BIPUSH = 0x10
 IADD = 0x62
@@ -59,6 +67,38 @@ def test_max_cycles_flag(micsim):
     assert "max cycles reached" in result.stderr
 
 
+def test_compiler_pipeline(micsim):
+    # full pipeline: MICC source -> micc.py -> asm.py -> micsim
+    source = '''
+int fib(int n) {
+    if (n < 2)
+        return n;
+    return fib(n - 1) + fib(n - 2);
+}
+
+int main() {
+    int r = fib(8);
+    return r;
+}
+'''
+    asm_text = micc.compile_to_asm(source)
+    program, constants = asm.assemble(asm_text)
+    with open("pipeline_program.bin", "wb") as f:
+        f.write(program)
+    with open("pipeline_constants.bin", "wb") as f:
+        f.write(constants)
+
+    cmd = [micsim, "-i", "pipeline_program.bin", "-k", "pipeline_constants.bin",
+           "-o", "pipeline_output.bin"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    assert result.returncode == 0
+
+    with open("pipeline_output.bin", "rb") as f:
+        raw = f.read()
+    data = list(struct.unpack("<%dI" % (len(raw) // 4), raw))
+    assert data[0] == 21
+
+
 def main():
     if len(sys.argv) < 2:
         print("Usage: micsim_tests.py <micsim_path>")
@@ -68,6 +108,7 @@ def main():
     test_program(micsim)
     test_constants_flag(micsim)
     test_max_cycles_flag(micsim)
-    print("Passed: 3")
+    test_compiler_pipeline(micsim)
+    print("Passed: 4")
 
 main()

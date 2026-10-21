@@ -1,0 +1,18 @@
+/* deep_rec.micc -- recursion depth 40 to stress the frame stack.
+   Expected result: 820 (sum 0..40).
+
+   Stack cost per recursion level: 4 words for the frame
+   (objref, param, savedPC, savedLV) + 1 word for the pending operand
+   of "n + sum(n - 1)". Deeper recursion needs a larger data segment:
+   run micsim with -d <bytes>. */
+
+int sum(int n) {
+    if (n == 0)
+        return 0;
+    return n + sum(n - 1);
+}
+
+int main() {
+    int r = sum(40);
+    return r;
+}

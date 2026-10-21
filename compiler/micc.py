@@ -5,16 +5,21 @@ Usage:
 
 Without -o: prints the AST dump (M2 behavior).
 With -o: compiles to assembly text and writes it to out.asm.
+Programs using '*' '/' '%' get the runtime library appended automatically.
 On any error prints [ERROR] line L, col C: <message> to stderr, exit 1.
 """
 
 import argparse
+import os
 import sys
 
 from lexer import Lexer, CompileError
 from parser import parse
 from ast_nodes import dump
-from codegen import gen
+from codegen import Codegen
+
+RUNTIME_LIB = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           'runtime_lib.asm')
 
 
 def compile_to_ast(source):
@@ -23,7 +28,14 @@ def compile_to_ast(source):
 
 
 def compile_to_asm(source):
-    return gen(compile_to_ast(source))
+    """Compile MICC source to .asm text, appending the runtime library
+    when the program uses '*', '/' or '%'."""
+    codegen = Codegen(compile_to_ast(source))
+    asm_text = codegen.gen()
+    if codegen.runtime_used:
+        with open(RUNTIME_LIB, 'r', encoding='utf-8') as f:
+            asm_text += '\n' + f.read()
+    return asm_text
 
 
 def main(argv=None):
