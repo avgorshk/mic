@@ -371,6 +371,88 @@ def assemble(source):
     return program, constants
 
 
+# ------------------------------------------------------------ stack analysis
+
+STACK_DELTA = {
+    'bipush': 1, 'ldc_w': 1, 'iload': 1, 'dup': 1,
+    'istore': -1, 'pop': -1, 'iadd': -1, 'isub': -1, 'iand': -1, 'ior': -1,
+    'ifeq': -1, 'iflt': -1, 'if_icmpeq': -2,
+}
+
+DATA_SEGMENT_WORDS_DEFAULT = 256
+
+
+def analyze_stack(source):
+    """Static estimate of maximum stack depth in words.
+
+    Returns a list of warning strings. The estimate follows the call graph
+    from main; a callee costs (locals + 2) frame words beyond the args its
+    caller already pushed, plus its own maximum net stack growth.
+    Recursive calls cannot be bounded: the cycle is cut and a per-level
+    growth note (a conservative over-estimate) is emitted instead. The
+    result under-estimates recursion depth -- that is data-dependent.
+    """
+    methods, methods_by_name, consts = _parse(source)
+    _layout(methods)
+    pool, method_index = _build_pool(methods, methods_by_name, consts)
+
+    info = {}   # name -> (max_delta, [callee names])
+    for m in methods:
+        delta = 0
+        max_delta = 0
+        calls = []
+        for _line_no, kind, data in m.code:
+            if kind == 'label':
+                continue
+            mnem, operand = data
+            if mnem == 'invokevirtual':
+                if operand[0] == 'idx':
+                    idx = operand[1]
+                    if idx >= len(pool) or pool[idx][0] != 'method':
+                        continue  # error case; emission would fail anyway
+                    callee = pool[idx][1]
+                else:
+                    callee = operand[1]
+                calls.append(callee)
+                callee_params = methods_by_name[callee].params
+                delta += 2 - callee_params   # args popped, result pushed
+            elif mnem == 'wide':
+                delta += 1 if operand[0] == 'iload' else -1
+            else:
+                delta += STACK_DELTA.get(mnem, 0)
+            max_delta = max(max_delta, delta)
+        info[m.name] = (max_delta, calls)
+
+    warnings = []
+    noted_recursion = set()
+
+    def depth(name, stack):
+        max_delta, calls = info[name]
+        m = methods_by_name[name]
+        frame = 0 if name == 'main' else m.locals_count + 2
+        if name in stack:
+            if name not in noted_recursion:
+                noted_recursion.add(name)
+                per_level = m.params + m.locals_count + 2 + max_delta
+                warnings.append(
+                    "recursive method '%s': ~%d words per recursion level"
+                    % (name, per_level))
+            return 0
+        best = 0
+        for callee in calls:
+            if callee in info:
+                best = max(best, depth(callee, stack + [name]))
+        return frame + max_delta + best
+
+    total = depth('main', [])
+    if total > DATA_SEGMENT_WORDS_DEFAULT:
+        warnings.append(
+            'estimated stack depth %d words exceeds the default %d-word '
+            'data segment (run micsim with -d <bytes>)'
+            % (total, DATA_SEGMENT_WORDS_DEFAULT))
+    return warnings
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         description='Assembler for the micsim instruction set (.asm -> .bin)')
@@ -405,6 +487,8 @@ def main(argv=None):
     if len(constants) > CONSTANT_SEGMENT_DEFAULT:
         print('[WARN] constants larger than the default %d-byte segment; '
               'run micsim with -c <size>' % CONSTANT_SEGMENT_DEFAULT, file=sys.stderr)
+    for warning in analyze_stack(source):
+        print('[WARN] %s' % warning, file=sys.stderr)
     return 0
 
 

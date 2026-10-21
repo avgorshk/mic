@@ -1,0 +1,92 @@
+/* rt.micc -- the runtime library written in MICC itself (bootstrap).
+
+   mul/div/mod implemented in the compiled language, exercising the same
+   algorithms as the hand-written assembly library, only in source form:
+   mul = repeated addition with sign fix, div = repeated subtraction with
+   C-style truncation toward zero, mod = sign of the dividend.
+
+   main() runs a fixed self-check: returns 1 if all cases match the
+   hardcoded C-semantics values, 0 otherwise. Note this program never
+   uses the '*' '/' '%' operators, so no hand-written runtime library is
+   appended -- everything below is executed by the compiler's own output.
+*/
+
+int mul(int a, int b) {
+    int r = 0;
+    int neg = 0;
+    if (b < 0) {
+        neg = 1;
+        b = -b;
+    }
+    while (b != 0) {
+        r = r + a;
+        b = b - 1;
+    }
+    if (neg)
+        r = -r;
+    return r;
+}
+
+int div(int a, int b) {
+    int q = 0;
+    int rem = a;
+    int d = b;
+    int neg = 0;
+    if (a < 0) {
+        neg = 1;
+        rem = -rem;
+    }
+    if (b < 0) {
+        if (neg == 1)
+            neg = 0;
+        else
+            neg = 1;
+        d = -d;
+    }
+    while (rem >= d) {
+        rem = rem - d;
+        q = q + 1;
+    }
+    if (neg)
+        q = -q;
+    return q;
+}
+
+int mod(int a, int b) {
+    int rem = a;
+    int d = b;
+    int neg = 0;
+    if (a < 0) {
+        neg = 1;
+        rem = -rem;
+    }
+    if (b < 0)
+        d = -d;
+    while (rem >= d)
+        rem = rem - d;
+    if (neg)
+        rem = -rem;
+    return rem;
+}
+
+int main() {
+    int r = 1;
+    if (mul(3, 17) != 51) r = 0;
+    if (mul(-5, 12) != -60) r = 0;
+    if (mul(7, -3) != -21) r = 0;
+    if (mul(-6, -9) != 54) r = 0;
+    if (mul(0, 42) != 0) r = 0;
+    if (mul(42, 0) != 0) r = 0;
+    if (mul(3, 4096) != 12288) r = 0;
+    if (div(17, 5) != 3) r = 0;
+    if (div(-17, 5) != -3) r = 0;
+    if (div(17, -5) != -3) r = 0;
+    if (div(-17, -5) != 3) r = 0;
+    if (div(7, 3) != 2) r = 0;
+    if (mod(17, 5) != 2) r = 0;
+    if (mod(-17, 5) != -2) r = 0;
+    if (mod(17, -5) != 2) r = 0;
+    if (mod(-17, -5) != -2) r = 0;
+    if (mod(7, 3) != 1) r = 0;
+    return r;
+}

@@ -354,6 +354,62 @@ halt
     assert prog == bytes([0x10, 0x0C, 0x1C, 0xFF]), prog.hex()
 
 
+def test_stack_depth_warning():
+    src = '.method main\nbipush 0\nbipush 1\ninvokevirtual f0\nhalt\n'
+    for i in range(70):
+        src += '.method f%d\n.params 2\n' % i
+        if i < 69:
+            src += 'bipush 0\nbipush 1\ninvokevirtual f%d\n' % (i + 1)
+        src += 'ireturn\n'
+    warnings = asm.analyze_stack(src)
+    assert any('exceeds the default 256-word' in w for w in warnings), \
+        'expected stack depth warning, got: %s' % warnings
+
+
+def test_stack_depth_recursion_note():
+    src = '''
+.method main
+bipush 0
+bipush 10
+invokevirtual fib
+halt
+
+.method fib
+.params 2
+.locals 0
+iload 1
+bipush 2
+isub
+iflt L0
+goto L1
+L0:
+iload 1
+ireturn
+L1:
+bipush 0
+iload 1
+bipush 1
+isub
+invokevirtual fib
+ireturn
+'''
+    warnings = asm.analyze_stack(src)
+    assert any("recursive method 'fib'" in w for w in warnings), \
+        'expected recursion note, got: %s' % warnings
+    assert not any('exceeds' in w for w in warnings), warnings
+
+
+def test_stack_depth_no_warning_for_small_program():
+    warnings = asm.analyze_stack('''
+.method main
+bipush 3
+bipush 4
+iadd
+halt
+''')
+    assert warnings == [], warnings
+
+
 def test_unknown_instruction():
     expect_error('''
 .method main
@@ -393,6 +449,9 @@ check('invokevirtual by name creates entry', test_invokevirtual_name_creates_ent
 check('invokevirtual reuses .const entry', test_invokevirtual_reuses_const_entry)
 check('invokevirtual index to non-method rejected', test_invokevirtual_idx_not_method)
 check('ishr encoding', test_ishr_encoding)
+check('stack depth warning (deep call chain)', test_stack_depth_warning)
+check('stack depth recursion note', test_stack_depth_recursion_note)
+check('stack depth silent for small programs', test_stack_depth_no_warning_for_small_program)
 check('.const unknown method rejected', test_const_unknown_method)
 check('.params defaults to 1', test_params_default)
 check('unknown instruction rejected', test_unknown_instruction)

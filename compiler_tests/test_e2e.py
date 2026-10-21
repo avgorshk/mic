@@ -25,24 +25,25 @@ if len(sys.argv) > 1:
     MICSIM = sys.argv[1]
 
 PROGRAMS = [
-    ('fib_rec', 55),
-    ('fib_iter', 55),
-    ('gcd', 12),
-    ('fact', 120),
-    ('sum1n', 55),
-    ('cmp', 6),
-    ('logic', 3),
-    ('arith', 25),
-    ('nested_call', 12),
-    ('mul_neg', 12239),
-    ('deep_rec', 820),
+    ('fib_rec', 55, 'programs/fib_rec.micc'),
+    ('fib_iter', 55, 'programs/fib_iter.micc'),
+    ('gcd', 12, 'programs/gcd.micc'),
+    ('fact', 120, 'programs/fact.micc'),
+    ('sum1n', 55, 'programs/sum1n.micc'),
+    ('cmp', 6, 'programs/cmp.micc'),
+    ('logic', 3, 'programs/logic.micc'),
+    ('arith', 25, 'programs/arith.micc'),
+    ('nested_call', 12, 'programs/nested_call.micc'),
+    ('mul_neg', 12239, 'programs/mul_neg.micc'),
+    ('deep_rec', 820, 'programs/deep_rec.micc'),
+    ('rt', 1, 'runtime/rt.micc'),
 ]
 
 RESULTS = []
 
 
-def run_program(name):
-    src_path = os.path.join(ROOT, 'programs', name + '.micc')
+def run_program(name, relpath):
+    src_path = os.path.join(ROOT, relpath)
     with open(src_path, 'r', encoding='utf-8') as f:
         source = f.read()
 
@@ -72,9 +73,9 @@ def run_program(name):
 
 def main():
     failed = 0
-    for name, expected in PROGRAMS:
+    for name, expected, relpath in PROGRAMS:
         try:
-            got = run_program(name)
+            got = run_program(name, relpath)
             assert got == expected, '%s: expected %d, got %d' % (
                 name, expected, got)
             RESULTS.append((name, True, ''))
