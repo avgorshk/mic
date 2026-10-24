@@ -22,7 +22,7 @@ Output format (locked by golden tests):
 from lexer import CompileError
 import ast_nodes as ast
 
-RUNTIME_FUNCS = ('mul', 'div', 'mod')
+RUNTIME_FUNCS = ('mul', 'div', 'mod', 'shl', 'shr')
 
 
 class Codegen:
@@ -169,8 +169,7 @@ class Codegen:
                 self._store(slots[stmt.name])
 
         elif isinstance(stmt, ast.Assign):
-            self._gen_expr(stmt.expr, slots)
-            self._store(slots[stmt.name])
+            self._gen_assign(stmt, slots)
 
         elif isinstance(stmt, ast.If):
             l_true = self._new_label()
@@ -210,6 +209,21 @@ class Codegen:
 
         else:
             raise AssertionError('unhandled statement %r' % stmt)
+
+    def _gen_assign(self, stmt, slots):
+        expr = stmt.expr
+        # peephole: x = x + c  ->  iinc x, c  (c fits int8, slot <= 255)
+        if (isinstance(expr, ast.Binary) and expr.op in ('+', '-')
+                and isinstance(expr.left, ast.Var)
+                and expr.left.name == stmt.name
+                and isinstance(expr.right, ast.IntLit)):
+            c = expr.right.value if expr.op == '+' else -expr.right.value
+            slot = slots[stmt.name]
+            if -128 <= c <= 127 and slot <= 255:
+                self._emit('iinc %d, %d' % (slot, c))
+                return
+        self._gen_expr(expr, slots)
+        self._store(slots[stmt.name])
 
     # --------------------------------------------------------- expressions
 
@@ -270,6 +284,8 @@ class Codegen:
                 self._gen_expr(expr.right, slots)
                 self._emit({'+': 'iadd', '-': 'isub', '&': 'iand',
                             '|': 'ior'}[op])
+            elif op in ('<<', '>>'):
+                self._gen_shift(expr, slots)
             elif op in ('*', '/', '%'):
                 self._gen_call_to_runtime(expr, slots)
             else:
@@ -280,6 +296,30 @@ class Codegen:
 
         else:
             raise AssertionError('unhandled expression %r' % expr)
+
+    def _gen_shift(self, expr, slots):
+        """Constant shifts inline (x << 1 -> dup; iadd, x >> 1 -> ishr);
+        runtime shifts call the shl/shr library functions."""
+        if isinstance(expr.right, ast.IntLit):
+            n = expr.right.value
+            if not (0 <= n <= 31):
+                raise CompileError(expr.right.line, 1,
+                                   'shift count %d out of range [0, 31]' % n)
+            self._gen_expr(expr.left, slots)
+            if expr.op == '<<':
+                for _ in range(n):
+                    self._emit('dup')
+                    self._emit('iadd')
+            else:
+                for _ in range(n):
+                    self._emit('ishr')
+        else:
+            func = 'shl' if expr.op == '<<' else 'shr'
+            self.runtime_used.add(func)
+            self._emit('bipush 0')
+            self._gen_expr(expr.left, slots)
+            self._gen_expr(expr.right, slots)
+            self._emit('invokevirtual %d' % self._method_entry(func))
 
     def _gen_call_to_runtime(self, expr, slots):
         """a * b  ->  bipush 0; a; b; invokevirtual <mul>"""

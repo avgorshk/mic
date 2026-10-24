@@ -128,6 +128,104 @@ int main() {
             Var c'''), got
 
 
+def test_precedence_shift_between_additive_and_relational():
+    # C: + - bind tighter than << >>, which bind tighter than < <=
+    got = dump_src('''\
+int main() {
+    int a = 1;
+    int b = 2;
+    int c = 3;
+    int d = a << b + c;
+    int e = a + b << c;
+    int f = a << b < c;
+}
+''')
+    assert got.endswith('''\
+      VarDecl d
+        Binary <<
+          Var a
+          Binary +
+            Var b
+            Var c
+      VarDecl e
+        Binary <<
+          Binary +
+            Var a
+            Var b
+          Var c
+      VarDecl f
+        Binary <
+          Binary <<
+            Var a
+            Var b
+          Var c'''), got
+
+
+def test_shift_associativity():
+    got = dump_src('''\
+int main() {
+    int a = 1;
+    int b = 2;
+    int c = 3;
+    int d = a << b << c;
+}
+''')
+    assert got.endswith('''\
+      VarDecl d
+        Binary <<
+          Binary <<
+            Var a
+            Var b
+          Var c'''), got
+
+
+def test_shift_constant_folding():
+    got = dump_src('''\
+int main() {
+    int a = 1 << 3;
+    int b = 100 >> 2;
+}
+''')
+    assert got.endswith('''\
+      VarDecl a
+        IntLit 8
+      VarDecl b
+        IntLit 25'''), got
+
+
+def test_shift_constant_folding_out_of_range_stays_binary():
+    got = dump_src('''\
+int main() {
+    int a = 1;
+    int b = a << 40;
+}
+''')
+    assert got.endswith('''\
+      VarDecl b
+        Binary <<
+          Var a
+          IntLit 40'''), got
+
+
+def test_compound_assignment_sugar():
+    got = dump_src('''\
+int main() {
+    int a = 1;
+    a += 2;
+    a -= 3;
+}
+''')
+    assert got.endswith('''\
+      Assign a
+        Binary +
+          Var a
+          IntLit 2
+      Assign a
+        Binary -
+          Var a
+          IntLit 3'''), got
+
+
 def test_unary_binding():
     got = dump_src('''\
 int main() {
@@ -459,6 +557,13 @@ def test_empty_program_rejected():
 check('full program dump (fib + main)', test_full_program_dump)
 check('precedence: * binds tighter than +', test_precedence_mul_over_add)
 check('precedence: + binds tighter than <', test_precedence_add_over_relational)
+check('precedence: shift between additive and relational',
+     test_precedence_shift_between_additive_and_relational)
+check('shift associativity (left)', test_shift_associativity)
+check('shift constant folding', test_shift_constant_folding)
+check('out-of-range constant shift stays a node',
+     test_shift_constant_folding_out_of_range_stays_binary)
+check('+= -= assignment sugar', test_compound_assignment_sugar)
 check('unary binding', test_unary_binding)
 check('left associativity of -', test_left_associativity)
 check('left associativity of * /', test_multiplicative_associativity)

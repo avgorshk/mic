@@ -27,7 +27,7 @@ KEYWORDS = {
     'return': 'RETURN',
 }
 
-TWO_CHAR_OPS = ('==', '!=', '<=', '>=', '&&', '||')
+TWO_CHAR_OPS = ('==', '!=', '<=', '>=', '&&', '||', '<<', '>>', '+=', '-=')
 ONE_CHAR_OPS = '+-*/%&|~!<>=(){};,'
 
 ALNUM_START = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_')

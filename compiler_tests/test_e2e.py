@@ -35,6 +35,7 @@ PROGRAMS = [
     ('arith', 25, 'programs/arith.micc'),
     ('collatz', 111, 'programs/collatz.micc'),
     ('nested_call', 12, 'programs/nested_call.micc'),
+    ('shifts', 136, 'programs/shifts.micc'),
     ('mul_neg', 12239, 'programs/mul_neg.micc'),
     ('deep_rec', 820, 'programs/deep_rec.micc'),
     ('rt', 1, 'runtime/rt.micc'),

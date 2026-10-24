@@ -256,20 +256,27 @@ int main() {
 ```
 
 Operators (tightest to loosest binding): unary `- ! ~`, `* / %`, `+ -`,
-`< <= > >=`, `== !=`, `&`, `|`, `&&`, `||`. Comparison operators cannot
-be chained. The result of a program is main's first declared local
+`<< >>`, `< <= > >=`, `== !=`, `&`, `|`, `&&`, `||`. Comparison operators
+cannot be chained. `x += e` / `x -= e` are sugar for `x = x + e` /
+`x = x - e`. The result of a program is main's first declared local
 (output word 0 of the simulator's data-segment dump).
+
+Shifts: constant shifts lower inline (`x << n` to `dup; iadd` x n,
+`x >> n` to n x `ishr`, counts 0..31); variable counts call `shl`/`shr`
+from the runtime library. `>>` is arithmetic (sign-extending).
+`x = x + c` / `x += c` with c fitting int8 compiles to a single `iinc`.
 
 ```
 python compiler/micc.py program.micc -o program.asm     # compile
 python compiler/micc.py program.micc                     # AST dump
 ```
 
-`*`, `/`, `%` lower to calls into a small runtime library
-(`compiler/runtime_lib.asm`) appended automatically when used: `mul`
-(shift-and-add using the `ishr` opcode, O(bit length) of the multiplier),
-`div` and `mod` (repeated subtraction, C-style truncation and remainder
-sign). The pre-`ishr` repeated-addition `mul` is kept in
+`*`, `/`, `%` and variable-count `<<`/`>>` lower to calls into a small
+runtime library (`compiler/runtime_lib.asm`) appended automatically when
+used: `mul` (shift-and-add using the `ishr` opcode, O(bit length) of the
+multiplier), `div` and `mod` (repeated subtraction, C-style truncation
+and remainder sign), `shl` and `shr` (doubling/halving loops, `shr`
+arithmetic). The pre-`ishr` repeated-addition `mul` is kept in
 `compiler/runtime_lib_legacy.asm`; `compiler_tests/bench_mul.py` compares
 the two on real cycle counts.
 

@@ -13,15 +13,21 @@ Grammar (operators listed tightest to loosest binding):
                | expr ';'                            (expression statement)
     expr      := or { '||' or }
     or        := and { '&&' and }
-    and       := equality { ('==' | '!=') equality }
+    and       := bitor { '|' bitor }
+    bitor     := bitand { '&' bitand }
+    bitand    := equality { ('==' | '!=') equality }
     equality  := relational { ('<' | '<=' | '>' | '>=') relational }
-    relational:= additive { ('+' | '-') additive }
-    additive  := multiplicative { ('*' | '/' | '%') multiplicative }
+    relational:= shift
+    shift     := additive { ('<<' | '>>') additive }
+    additive  := multiplicative { ('+' | '-') multiplicative }
     multiplicative := unary
     unary     := ('-' | '!' | '~') unary | primary
     primary   := INTLIT | IDENT | IDENT '(' [ expr {',' expr} ] ')' | '(' expr ')'
 
+Assignment: '=' plain, or '+='/'-=' sugar (x += e == x = x + e).
 Comparison operators cannot be chained (a < b < c is an error).
+Shift counts: constant shifts are folded at parse time; runtime shifts
+call the shl/shr library functions (arithmetic right shift).
 
 Scope: variables are function-scoped (params + declared locals); a variable
 must be declared before first use. Duplicate declarations are errors.
@@ -133,14 +139,20 @@ class Parser:
         if tok[0] == '{':
             return self._parse_block()
         if tok[0] == 'IDENT':
-            # assignment (IDENT '=') or expression statement (call, bare var)
-            if self.tokens[self.pos + 1][0] == '=':
+            # assignment (IDENT '=' | '+=' | '-=') or expression statement
+            next_kind = self.tokens[self.pos + 1][0]
+            if next_kind in ('=', '+=', '-='):
                 name_tok = self._next()
                 self._check_declared(name_tok)
-                self._next()  # '='
+                op_tok = self._next()
                 expr = self._parse_expr()
                 self._expect(';', "';'")
-                return ast.Assign(name_tok[1], expr)
+                if op_tok[0] == '=':
+                    return ast.Assign(name_tok[1], expr)
+                # x += e  ==  x = x + e ; x -= e  ==  x = x - e
+                return ast.Assign(
+                    name_tok[1],
+                    ast.Binary(op_tok[0][0], ast.Var(name_tok[1]), expr))
             expr = self._parse_expr()
             self._expect(';', "';'")
             return ast.ExprStmt(expr)
@@ -236,12 +248,28 @@ class Parser:
         return node
 
     def _parse_relational(self):
-        node = self._parse_additive()
+        node = self._parse_shift()
         while (self._check('<') or self._check('<=') or self._check('>')
                or self._check('>=')):
             op = self._next()[0]
-            node = ast.Binary(op, node, self._parse_additive())
+            node = ast.Binary(op, node, self._parse_shift())
             self._reject_comparison_chain()
+        return node
+
+    def _parse_shift(self):
+        node = self._parse_additive()
+        while self._check('<<') or self._check('>>'):
+            op = self._next()[0]
+            rhs = self._parse_additive()
+            # constant folding: IntLit << IntLit with a sane count
+            if isinstance(node, ast.IntLit) and isinstance(rhs, ast.IntLit):
+                n = rhs.value
+                if 0 <= n <= 31:
+                    v = (node.value << n) if op == '<<' else (node.value >> n)
+                    if -0x80000000 <= v <= 0xFFFFFFFF:
+                        node = ast.IntLit(v, node.line)
+                        continue
+            node = ast.Binary(op, node, rhs)
         return node
 
     def _reject_comparison_chain(self):

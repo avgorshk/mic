@@ -182,10 +182,7 @@ L0:
     iflt L1
     goto L2
 L1:
-    iload 0
-    bipush 1
-    iadd
-    istore 0
+    iinc 0, 1
     goto L0
 L2:
     iload 0
@@ -195,6 +192,113 @@ L2:
 
 def test_while():
     assert gen_src(WHILE_SRC) == WHILE_ASM, gen_src(WHILE_SRC)
+
+
+def test_shift_left_constant_uses_dup_iadd():
+    asm_text = gen_src('''\
+int main() {
+    int x = 7;
+    int y = x << 3;
+    return y;
+}
+''')
+    assert '''\
+    iload 0
+    dup
+    iadd
+    dup
+    iadd
+    dup
+    iadd
+    istore 1
+''' in asm_text, asm_text
+
+
+def test_shift_right_constant_uses_ishr():
+    asm_text = gen_src('''\
+int main() {
+    int x = 100;
+    int y = x >> 2;
+    return y;
+}
+''')
+    assert '''\
+    iload 0
+    ishr
+    ishr
+    istore 1
+''' in asm_text, asm_text
+
+
+def test_shift_variable_calls_shr():
+    asm_text = gen_src('''\
+int main() {
+    int x = 100;
+    int y = 2;
+    int z = x >> y;
+    return z;
+}
+''')
+    assert '''\
+    bipush 0
+    iload 0
+    iload 1
+    invokevirtual 0
+    istore 2
+''' in asm_text, asm_text
+    assert asm_text.endswith('.const shr\n'), asm_text
+
+
+def test_shift_count_out_of_range_is_an_error():
+    expect_error('''\
+int main() {
+    int x = 1;
+    int y = x << 32;
+    return y;
+}
+''', 'shift count 32 out of range [0, 31]')
+    expect_error('''\
+int main() {
+    int x = 1;
+    int y = x >> -1;
+    return y;
+}
+''', 'shift count -1 out of range [0, 31]')
+
+
+def test_iinc_peephole():
+    asm_text = gen_src('''\
+int main() {
+    int i = 0;
+    i = i + 5;
+    i = i - 3;
+    i += 1;
+    return i;
+}
+''')
+    assert '''\
+    iinc 0, 5
+    iinc 0, -3
+    iinc 0, 1
+''' in asm_text, asm_text
+
+
+def test_iinc_peephole_skipped_when_out_of_range():
+    # 300 does not fit int8 -> full iload/ldc_w/iadd/istore sequence
+    asm_text = gen_src('''\
+int main() {
+    int i = 0;
+    i = i + 300;
+    return i;
+}
+''')
+    assert '''\
+    iload 0
+    ldc_w 0
+    iadd
+    istore 0
+''' in asm_text, asm_text
+    assert 'iinc 0, 300' not in asm_text
 
 
 CMP_SRC = '''\
@@ -544,6 +648,14 @@ L14:
 check('fib golden', test_fib)
 check('factorial golden (mul runtime call)', test_fact)
 check('while loop golden', test_while)
+check('constant << lowers to dup/iadd', test_shift_left_constant_uses_dup_iadd)
+check('constant >> lowers to ishr', test_shift_right_constant_uses_ishr)
+check('variable >> calls the shr library function',
+     test_shift_variable_calls_shr)
+check('out-of-range shift counts rejected', test_shift_count_out_of_range_is_an_error)
+check('iinc peephole for x = x + c / x += c', test_iinc_peephole)
+check('iinc peephole skipped when c out of int8',
+     test_iinc_peephole_skipped_when_out_of_range)
 check('comparison + logic value codegen', test_comparisons_and_logic)
 check('large constants -> ldc_w pool', test_large_constants)
 check('if/else golden', test_if_else)

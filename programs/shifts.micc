@@ -1,0 +1,20 @@
+/* shifts.micc -- exercises the shift operators and compound assignment:
+   constant << (dup/iadd), constant >> (ishr), runtime >> (shr call),
+   += (iinc peephole). Result is a checksum of all the cases. */
+
+int main() {
+    int r = 1 << 4;        /* 16           -- constant << */
+    int x = 100 >> 2;      /* 25           -- constant >> */
+    r = r + x;             /* 41 */
+    int s = 3;
+    r = r + (7 << s);      /* 7 << 3 = 56  -- runtime shl -> 97 */
+    r = r + (256 >> s);    /* 256 >> 3 = 32 -- runtime shr -> 129 */
+    int i = 0;
+    while (i < 5) {
+        r += 3;            /* iinc path, r = r + 3 -> 144 */
+        i += 1;
+    }
+    r -= 4;                /* 140           -- iinc with negative */
+    r = r + ((-8) >> 1);   /* -4, arithmetic shift -> 136 */
+    return r;
+}

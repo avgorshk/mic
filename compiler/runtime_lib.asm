@@ -1,5 +1,6 @@
 ; Runtime library for compiled MICC programs.
-; Appended to the generated assembly when the program uses '*', '/' or '%'.
+; Appended to the generated assembly when the program uses '*', '/', '%',
+; '<<' or '>>'.
 ;
 ; mul(a, b): shift-and-add (schoolbook binary multiplication) using the
 ;            'ishr' opcode (TOS >>= 1, arithmetic). The multiplier is held
@@ -216,5 +217,44 @@ Lmod_sign:
     isub
     istore 3                ; rem = -rem
 Lmod_ret:
+    iload 3
+    ireturn
+
+; shl(a, b): a << b. b must be in [0, 31]; larger counts keep doubling and
+;            overflow mod 2^32 (C-like). Negative b never terminates.
+.method shl
+.params 3
+.locals 1
+    iload 1
+    istore 3                ; r = a
+Lshl_loop:
+    iload 2
+    ifeq Lshl_ret
+    iload 3
+    iload 3
+    iadd
+    istore 3                ; r = r + r
+    iinc 2, -1
+    goto Lshl_loop
+Lshl_ret:
+    iload 3
+    ireturn
+
+; shr(a, b): a >> b, arithmetic (sign-extending) right shift, like C on
+;            two's-complement machines. Negative values keep their sign.
+.method shr
+.params 3
+.locals 1
+    iload 1
+    istore 3                ; r = a
+Lshr_loop:
+    iload 2
+    ifeq Lshr_ret
+    iload 3
+    ishr
+    istore 3                ; r >>= 1 (arithmetic)
+    iinc 2, -1
+    goto Lshr_loop
+Lshr_ret:
     iload 3
     ireturn

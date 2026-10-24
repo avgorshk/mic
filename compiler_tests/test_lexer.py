@@ -54,6 +54,12 @@ def test_two_char_operators():
         'IDENT', '==', 'IDENT', 'EOF']
 
 
+def test_shift_and_compound_operators():
+    assert kinds('a << b >> c += d -= e') == [
+        'IDENT', '<<', 'IDENT', '>>', 'IDENT', '+=', 'IDENT', '-=',
+        'IDENT', 'EOF']
+
+
 def test_single_char_operators():
     assert kinds('+ - * / % & | ~ ! < > = ( ) { } ; ,') == [
         '+', '-', '*', '/', '%', '&', '|', '~', '!', '<', '>', '=',
@@ -106,6 +112,7 @@ def test_empty_source():
 
 check('simple tokens with positions', test_simple_tokens)
 check('two-char operators', test_two_char_operators)
+check('shift and compound-assignment operators', test_shift_and_compound_operators)
 check('single-char operators', test_single_char_operators)
 check('keywords vs identifiers', test_keywords_vs_identifiers)
 check('integer literals (dec + hex)', test_integer_literals)
