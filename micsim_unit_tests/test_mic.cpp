@@ -225,7 +225,7 @@ TEST_CASE("DUP") {
 }
 
 TEST_CASE("POP") {
-	std::vector<uint8_t> program = { POP_ADDR };
+	std::vector<uint8_t> program = { POP_ADDR, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
