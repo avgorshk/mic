@@ -315,7 +315,17 @@ compiler_tests/       python test suites + benchmark
 integration_tests/    CLI + pipeline tests
 ```
 
-## 7. Known limits
+## 7. Micro-architecture versions
+
+Performance is tracked by re-running `python benchmarks/run_bench.py`
+after each micro-architecture change (the benchmark programs themselves
+never change). Cycles are the suite totals from the latest run.
+
+| version | date | commit | TOTAL (micro) | TOTAL (all) | note |
+|---|---|---|---|---|---|
+| baseline | 2026-10-24 | `0da40c7` | 10,138,315 | 15,447,389 | initial state before any micro-architecture work: one cycle per micro-instruction, the ISA as first built |
+
+## 8. Known limits
 
 - 1 KB default segments; deep recursion costs ~5-9 words per level in a
   256-word data segment (grow with `-d`, watch the assembler's warning).
