@@ -319,11 +319,13 @@ integration_tests/    CLI + pipeline tests
 
 Performance is tracked by re-running `python benchmarks/run_bench.py`
 after each micro-architecture change (the benchmark programs themselves
-never change). Cycles are the suite totals from the latest run.
+never change). Cycles are the suite totals from the latest run; the
+speed-up column is the baseline TOTAL (micro) divided by the version's
+TOTAL (micro).
 
-| version | date | commit | TOTAL (micro) | TOTAL (all) | note |
-|---|---|---|---|---|---|
-| baseline | 2026-10-24 | `0da40c7` | 10,138,315 | 15,447,389 | initial state before any micro-architecture work: one cycle per micro-instruction, the ISA as first built |
+| version | date | commit | TOTAL (micro) | TOTAL (all) | speed-up vs baseline | note |
+|---|---|---|---|---|---|---|
+| baseline | 2026-10-24 | `0da40c7` | 10,138,315 | 15,447,389 | 1.00x | initial state before any micro-architecture work: one cycle per micro-instruction, the ISA as first built |
 
 ## 8. Known limits
 
