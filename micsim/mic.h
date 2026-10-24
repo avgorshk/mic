@@ -30,6 +30,10 @@ public:
 
 		uint8_t is_written = 0;
 		global_memory_->Fetch(1, regs_.pc, is_written);
+		uint8_t mbr0 = global_memory_->Fetch(0, regs_.pc, is_written);
+		if (is_written) {
+			regs_.mbr = mbr0;
+		}
 	}
 
 public:
@@ -92,6 +96,12 @@ private:
 	}
 
 	void WriteRegisters() {
+		// MPC and MBR latch at the same clock edge, so the dispatch must
+		// see the pre-edge MBR: snapshot it BEFORE the memory deliveries.
+		// A byte delivered this cycle can steer the dispatch no earlier
+		// than the next cycle.
+		uint32_t mbr_for_dispatch = regs_.mbr;
+
 		uint32_t bus_c_ = alu_.GetResult();
 		if (signals_.write_cpp) regs_.cpp = bus_c_;
 		if (signals_.write_h) regs_.h = bus_c_;
@@ -114,7 +124,7 @@ private:
 			regs_.mdr = mdr;
 		}
 
-		control_memory_.UpdateMPC(alu_.GetN(), alu_.GetZ(), regs_.mbr);
+		control_memory_.UpdateMPC(alu_.GetN(), alu_.GetZ(), mbr_for_dispatch);
 	}
 
 private:

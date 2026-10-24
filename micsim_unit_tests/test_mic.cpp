@@ -56,7 +56,8 @@ TEST_CASE("WIDE_ILOAD") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
-	mic.Cycle(); // WIDE
+	mic.Cycle(); // WIDE1 (wait for the widened opcode to land in MBR)
+	mic.Cycle(); // WIDE2 (dispatch to the wide routine)
 	mic.Cycle(); // WIDE_ILOAD1
 	mic.Cycle(); // WIDE_ILOAD2
 	mic.Cycle(); // WIDE_ILOAD3
@@ -329,7 +330,8 @@ TEST_CASE("WIDE_ISTORE") {
 
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
-	mic.Cycle(); // WIDE
+	mic.Cycle(); // WIDE1 (wait for the widened opcode to land in MBR)
+	mic.Cycle(); // WIDE2 (dispatch to the wide routine)
 	mic.Cycle(); // WIDE_ISTORE1
 	mic.Cycle(); // WIDE_ISTORE2
 	mic.Cycle(); // WIDE_ISTORE3

@@ -129,7 +129,8 @@ public:
 		memory_[INVOKEVIRTUAL_ADDR + 20] = INVOKEVIRTUAL21MicroInstruction();
 		memory_[INVOKEVIRTUAL_ADDR + 21] = INVOKEVIRTUAL22MicroInstruction();
 
-		memory_[WIDE_ADDR] = WIDEMicroInstruction();
+		memory_[WIDE_ADDR] = WIDE1MicroInstruction();
+		memory_[WIDE_ADDR + 1] = WIDE2MicroInstruction();
 
 		memory_[F_ADDR] = F1MicroInstruction();
 		memory_[F_ADDR + 1] = F2MicroInstruction();

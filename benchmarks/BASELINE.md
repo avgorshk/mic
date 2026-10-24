@@ -29,3 +29,7 @@ TOTAL (all)   15447389
 How to use it: after any microarchitecture change, rebuild micsim, rerun
 the suite, and diff against this file. The programs themselves must stay
 unchanged (that is the point — only the machine gets faster).
+
+Note: these numbers predate the dispatch-timing model fix (JMPC now uses
+the pre-edge MBR; WIDE became 2 cycles). Current numbers are tracked in
+the README's micro-architecture versions table.

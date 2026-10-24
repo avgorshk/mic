@@ -326,6 +326,7 @@ TOTAL (micro).
 | version | commit | TOTAL (micro) | TOTAL (all) | speed-up vs baseline | note |
 |---|---|---|---|---|---|
 | baseline | `0da40c7` | 10,138,315 | 15,447,389 | 1.00x | initial state before any micro-architecture work: one cycle per micro-instruction, the ISA as first built |
+| model-fix | `TBD` | 10,141,924 | 15,450,998 | 0.9996x | hardware-faithful dispatch timing: JMPC now sees the pre-edge MBR (WIDE becomes 2 cycles — its old 1-cycle form was a same-edge-dispatch modeling artifact); not a slowdown, a cycle-accounting correction |
 
 ## 8. Known limits
 
