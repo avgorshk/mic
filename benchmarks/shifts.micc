@@ -1,0 +1,15 @@
+/* shifts.micc -- shift stress: constant << (dup/iadd), constant >>
+   (ishr), and runtime counts via the shl/shr library functions. */
+int main() {
+    int r = 0;
+    int i = 0;
+    int s = 3;
+    while (i < 1000) {
+        r = r + (i << 1);
+        r = r + (i >> 2);
+        r = r + (i << s);
+        r = r + (i >> s);
+        i += 1;
+    }
+    return r;
+}

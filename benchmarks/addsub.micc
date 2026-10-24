@@ -1,0 +1,10 @@
+/* addsub.micc -- iadd/isub stress: r accumulates (i - 1) for 5000 steps. */
+int main() {
+    int r = 0;
+    int i = 0;
+    while (i < 5000) {
+        r = r + i - 1;
+        i += 1;
+    }
+    return r;
+}

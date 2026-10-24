@@ -1,0 +1,16 @@
+/* consts.micc -- constant handling mix: bipush (small, via the cheap
+   '&' condition and the iinc path), ldc_w (100000, -12345, loop bound
+   2000), and the out-of-int8 fallback path (r + (-12345)). */
+int main() {
+    int r = 0;
+    int i = 0;
+    while (i < 2000) {
+        if ((i & 7) == 0)
+            r = r + 100000;
+        else
+            r = r + 5;
+        r = r + (-12345);
+        i += 1;
+    }
+    return r;
+}

@@ -1,0 +1,23 @@
+/* calls.micc -- frame traffic: 1000 iterations through an 8-level
+   nested call chain (invokevirtual/ireturn), plus a discarded call
+   (expression statement -> pop). The chain includes mul/div/mod so the
+   runtime library is called from inside a callee too. */
+int f0(int x) { return x + 1; }
+int f1(int x) { return x - 2; }
+int f2(int x) { return x * 3; }
+int f3(int x) { return x / 4; }
+int f4(int x) { return x % 5; }
+int f5(int x) { return x + 6; }
+int f6(int x) { return x - 7; }
+int f7(int x) { return x * 8; }
+
+int main() {
+    int r = 1;
+    int i = 0;
+    while (i < 1000) {
+        r = f7(f6(f5(f4(f3(f2(f1(f0(r))))))));
+        i += 1;
+    }
+    f0(r);
+    return r;
+}

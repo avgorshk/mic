@@ -1,0 +1,11 @@
+/* bitwise.micc -- iand/ior stress; '~i' also emits swap
+   (bipush -1; swap; isub). Result is a uint32 checksum. */
+int main() {
+    int r = 0;
+    int i = 0;
+    while (i < 3000) {
+        r = (r & i) | ~i;
+        i += 1;
+    }
+    return r;
+}

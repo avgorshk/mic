@@ -1,0 +1,15 @@
+/* incr.micc -- iinc stress in both directions: a count-up loop driven
+   by '+= 1' and a count-down loop driven by '-= 1' (iinc x, -1). */
+int main() {
+    int r = 0;
+    int i = 0;
+    while (i < 4000) {
+        r += 1;
+        i += 1;
+    }
+    while (i > 0) {
+        r += 1;
+        i -= 1;
+    }
+    return r;
+}

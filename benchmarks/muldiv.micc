@@ -1,0 +1,11 @@
+/* muldiv.micc -- runtime library stress: every iteration calls mul,
+   div and mod. */
+int main() {
+    int r = 0;
+    int i = 0;
+    while (i < 300) {
+        r = r + (i * 3) / 2 + (i % 7);
+        i += 1;
+    }
+    return r;
+}

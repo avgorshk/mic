@@ -294,9 +294,10 @@ outputs.
 | lexer | `python compiler_tests/test_lexer.py` | tokens, positions, comments |
 | parser | `python compiler_tests/test_parser.py` | AST goldens, precedence, errors |
 | codegen | `python compiler_tests/test_codegen.py` | .asm goldens, error cases |
-| e2e | `python compiler_tests/test_e2e.py` | MICC -> machine, 12 programs |
+| e2e | `python compiler_tests/test_e2e.py` | MICC -> machine, 14 programs |
 | bootstrap | `python compiler_tests/test_bootstrap.py` | MICC runtime == asm runtime |
 | integration | `python integration_tests/micsim_tests.py .\x64\Debug\micsim.exe` | CLI flags + full pipeline |
+| benchmark | `python benchmarks/run_bench.py` | 11 programs: every opcode covered, cycle totals vs `benchmarks/BASELINE.md` |
 | benchmark | `python compiler_tests/bench_mul.py` | repeated-add vs shift-add mul |
 
 ## 6. Layout
@@ -309,6 +310,7 @@ compiler/             micc.py, lexer, parser, AST, codegen, runtime libs
 assembler/            asm.py
 programs/             example .asm and .micc programs
 runtime/              the runtime library written in MICC (bootstrap)
+benchmarks/           the benchmark suite + run_bench.py + BASELINE.md
 compiler_tests/       python test suites + benchmark
 integration_tests/    CLI + pipeline tests
 ```
