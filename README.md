@@ -326,7 +326,6 @@ TOTAL (micro).
 | version | commit | TOTAL (micro) | TOTAL (all) | speed-up vs baseline | note |
 |---|---|---|---|---|---|
 | baseline | `0f1d1f4` | 10,141,924 | 15,450,998 | 1.00x | hardware-faithful dispatch timing: JMPC sees the pre-edge MBR (WIDE takes 2 cycles). Adopted as the reference point — the pre-fix numbers (`0da40c7`) are retired: they measured the same-edge-dispatch artifact |
-| pop-fusion | `291726e` | 10,141,923 | 15,450,997 | 1.00x | POP fused with dispatch: POP2 absorbs MAIN's PC+1+fetch, POP3 dispatches directly via JMPC — saves 1 cycle per POP executed (the frozen suite contains one, hence the near-identical total) |
 
 ## 8. Known limits
 
