@@ -1,6 +1,6 @@
 #pragma once
+#include "../micro_instruction.h"
 
-#include "main_micro_instruction.h"
 
 constexpr uint32_t GOTO_ADDR = 0xA6;
 

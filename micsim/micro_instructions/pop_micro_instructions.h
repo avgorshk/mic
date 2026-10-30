@@ -1,6 +1,6 @@
 #pragma once
+#include "../micro_instruction.h"
 
-#include "main_micro_instruction.h"
 
 constexpr uint32_t POP_ADDR = 0x57;
 

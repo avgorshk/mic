@@ -1,6 +1,6 @@
 #pragma once
+#include "../micro_instruction.h"
 
-#include "main_micro_instruction.h"
 
 constexpr uint32_t F_ADDR = 0xF0;
 

@@ -11,6 +11,7 @@ class WIDE2MicroInstruction : public MicroInstruction {
 public:
 	WIDE2MicroInstruction() {
 		inst_.jmpc = 1;
+		// dispatch base for wide opcodes: MPC = 0x100 | widened_opcode
 		inst_.next_address = 0x100;
 	}
 };

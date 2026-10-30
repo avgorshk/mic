@@ -1,6 +1,6 @@
 #pragma once
+#include "../micro_instruction.h"
 
-#include "main_micro_instruction.h"
 
 constexpr uint32_t IRETURN_ADDR = 0xAC;
 

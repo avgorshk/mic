@@ -1,4 +1,5 @@
 #pragma once
+#include "../micro_instruction.h"
 
 #include "istore_micro_instructions.h"
 
