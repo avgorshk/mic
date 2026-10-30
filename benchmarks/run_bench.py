@@ -3,7 +3,8 @@
 Run:  python benchmarks/run_bench.py [path/to/micsim.exe]
 
 Compiles, assembles and runs every benchmark on the simulator, verifies
-each result word, and reports cycles per benchmark plus overall totals
+each result word, and reports time per benchmark in micro-clocks
+(1 simulator cycle = 3 micro-clocks) plus overall totals
 (TOTAL (micro) = the 9 micro-benchmarks, TOTAL (all) = + the 2 realistic
 programs). Also sanity-scans the assembled binaries for opcode coverage.
 
@@ -84,20 +85,23 @@ def run_one(name, relpath, extra_args, expected):
                 'result': 'FAIL (micsim exit %d)' % proc.returncode}, program
     m = re.search(r'Cycles completed:\s*(\d+)', proc.stdout)
     if not m:
-        return {'name': name, 'cycles': None,
+        return {'name': name, 'micro_clocks': None,
                 'result': 'FAIL (no cycle count)'}, program
-    cycles = int(m.group(1))
-    stalls = None
-    ms = re.search(r'stall:\s*(\d+)', proc.stdout)
-    if ms:
-        stalls = int(ms.group(1))
+    # Time in micro-clocks: 1 simulator cycle = 3 micro-clocks.
+    mt = re.search(r'Micro-clocks completed:\s*(\d+)\s*\(stall:\s*(\d+)\)',
+                   proc.stdout)
+    if not mt:
+        return {'name': name, 'micro_clocks': None,
+                'result': 'FAIL (no micro-clock count)'}, program
+    micro_clocks = int(mt.group(1))
+    stalls = int(mt.group(2))
     with open(out_path, 'rb') as f:
         word0 = struct.unpack('<I', f.read(4))[0]
     if word0 != expected:
-        return {'name': name, 'cycles': cycles,
+        return {'name': name, 'micro_clocks': micro_clocks,
                 'result': 'FAIL (word0=%u, expected %u)'
                 % (word0, expected)}, program
-    return {'name': name, 'cycles': cycles, 'stalls': stalls,
+    return {'name': name, 'micro_clocks': micro_clocks, 'stalls': stalls,
             'result': 'ok'}, program
 
 
@@ -112,14 +116,14 @@ def main():
         if row['result'] != 'ok':
             failed = True
 
-    print('name         cycles       stalls      result')
+    print('name         micro-clocks stall       result')
     for row in rows:
-        print('%-12s %-12s %-11s %s'
-              % (row['name'], row['cycles'],
+        print('%-12s %-12s %-10s %s'
+              % (row['name'], row['micro_clocks'],
                  row['stalls'] if row['stalls'] is not None else '-',
                  row['result']))
-    total_micro = sum(r['cycles'] for r in rows[:len(MICRO)])
-    total_all = sum(r['cycles'] for r in rows)
+    total_micro = sum(r['micro_clocks'] for r in rows[:len(MICRO)])
+    total_all = sum(r['micro_clocks'] for r in rows)
     total_stalls = sum(r['stalls'] for r in rows if r['stalls'])
     print('TOTAL (micro) %d' % total_micro)
     print('TOTAL (all)   %d' % total_all)

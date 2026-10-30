@@ -230,5 +230,8 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Cycles completed: " << cycle_count
               << " (stall: " << mic.GetStallCycles() << ")" << std::endl;
+    // 1 simulator cycle = 3 micro-clocks: the time in micro-clocks.
+    std::cout << "Micro-clocks completed: " << cycle_count * 3
+              << " (stall: " << mic.GetStallCycles() * 3 << ")" << std::endl;
     std::cout << "Output written: " << output_file << std::endl;
 }

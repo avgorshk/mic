@@ -32,6 +32,9 @@ Retired: the earlier numbers captured at `0da40c7`
 (10,138,315 / 15,447,389) measured the same-edge-dispatch artifact and
 are no longer a valid reference.
 
+Time unit: 1 simulator cycle = 3 micro-clocks, so this baseline is
+30,425,772 / 46,352,994 micro-clocks.
+
 How to use it: after any microarchitecture change, rebuild micsim, rerun
 the suite, and diff against this file. The programs themselves must stay
 unchanged (that is the point — only the machine gets faster). Current

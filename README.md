@@ -319,15 +319,15 @@ integration_tests/    CLI + pipeline tests
 
 Performance is tracked by re-running `python benchmarks/run_bench.py`
 after each micro-architecture change (the benchmark programs themselves
-never change). Cycles are the suite totals from the latest run; the
-speed-up column is the baseline TOTAL (micro) divided by the version's
-TOTAL (micro).
+never change). Time is reported in micro-clocks: 1 simulator cycle = 3
+micro-clocks (the simulator prints both). The speed-up column is the
+baseline TOTAL (micro) divided by the version's TOTAL (micro).
 
 | version | commit | TOTAL (micro) | TOTAL (stall) | TOTAL (all) | speed-up vs baseline | note |
 |---|---|---|---|---|---|---|
-| baseline | `0f1d1f4` | 10,141,924 | 0 | 15,450,998 | 1.00x | hardware-faithful dispatch timing: JMPC sees the pre-edge MBR (WIDE takes 2 cycles). Adopted as the reference point — the pre-fix numbers (`0da40c7`) are retired: they measured the same-edge-dispatch artifact |
-| a-bus | `d4b01da` | 8,881,243 | 0 | 13,461,752 | 1.14x | dual ALU buses: A-bus mux (9 sources incl. MBR signed/unsigned), B-bus loses MBR, gains H. Reworked iadd/isub/iand/ior, iload, istore, iinc: direct operands instead of H round trips + dispatch fused into the last routine cycle (iinc −1 cycle, iload −1, istore −1, iadd family −1 each) |
-| ifu | `fbdcbd4` | 6,670,954 | 20,085 | 10,235,738 | 1.52x | instruction fetch unit: PC + 6-byte shift register + MBR1/MBR2 (A-bus reads are the consumption events, JMPC consumes the opcode), 4-byte background refills from an internal auto-incrementing IMAR, `write_pc` flushes + refills. All fetch bookkeeping (PC+1 + mem_fetch + latency pads) left the microcode; stall cycles are counted separately. goto 10→5, ldc_w 8→4, invokevirtual 23→17, bipush 5→3, wide_iload 8→5. MAIN is removed: NOP (goto(MBR)) is the decode step, and the jump path is GOTO3 (scheduled refill wait) + GOTO4 (dispatch) — the remaining stalls are only the unscheduled holds (e.g. invokevirtual's header wait) |
+| baseline | `0f1d1f4` | 30,425,772 | 0 | 46,352,994 | 1.00x | hardware-faithful dispatch timing: JMPC sees the pre-edge MBR (WIDE takes 2 cycles). Adopted as the reference point — the pre-fix numbers (`0da40c7`) are retired: they measured the same-edge-dispatch artifact |
+| a-bus | `d4b01da` | 26,643,729 | 0 | 40,385,256 | 1.14x | dual ALU buses: A-bus mux (9 sources incl. MBR signed/unsigned), B-bus loses MBR, gains H. Reworked iadd/isub/iand/ior, iload, istore, iinc: direct operands instead of H round trips + dispatch fused into the last routine cycle (iinc −1 cycle, iload −1, istore −1, iadd family −1 each) |
+| ifu | `fbdcbd4` | 20,012,862 | 60,255 | 30,707,214 | 1.52x | instruction fetch unit: PC + 6-byte shift register + MBR1/MBR2 (A-bus reads are the consumption events, JMPC consumes the opcode), 4-byte background refills from an internal auto-incrementing IMAR, `write_pc` flushes + refills. All fetch bookkeeping (PC+1 + mem_fetch + latency pads) left the microcode; stall cycles are counted separately. goto 10→5, ldc_w 8→4, invokevirtual 23→17, bipush 5→3, wide_iload 8→5. MAIN is removed: NOP (goto(MBR)) is the decode step, and the jump path is GOTO3 (scheduled refill wait) + GOTO4 (dispatch) — the remaining stalls are only the unscheduled holds (e.g. invokevirtual's header wait) |
 
 ## 8. Known limits
 
