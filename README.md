@@ -326,6 +326,7 @@ TOTAL (micro).
 | version | commit | TOTAL (micro) | TOTAL (all) | speed-up vs baseline | note |
 |---|---|---|---|---|---|
 | baseline | `0f1d1f4` | 10,141,924 | 15,450,998 | 1.00x | hardware-faithful dispatch timing: JMPC sees the pre-edge MBR (WIDE takes 2 cycles). Adopted as the reference point — the pre-fix numbers (`0da40c7`) are retired: they measured the same-edge-dispatch artifact |
+| a-bus | `d4b01da` | 8,881,243 | 13,461,752 | 1.14x | dual ALU buses: A-bus mux (9 sources incl. MBR signed/unsigned), B-bus loses MBR, gains H. Reworked iadd/isub/iand/ior, iload, istore, iinc: direct operands instead of H round trips + dispatch fused into the last routine cycle (iinc −1 cycle, iload −1, istore −1, iadd family −1 each) |
 
 ## 8. Known limits
 
