@@ -93,10 +93,16 @@ struct ALUFunction {
 
 class ALU {
 public:
+	// Three-micro-cycle pipeline:
+	//   micro-cycle 1: the A/B bus mux values latch into pipeline
+	//                  registers A and B (SetAB)
+	//   micro-cycle 2: the combinational core runs on A/B; the result
+	//                  lands in pipeline register C (Execute + Shift)
+	//   micro-cycle 3: C is written back to the register file (GetC)
 	ALU() {}
 	~ALU() {}
 
-	void SetInput(uint32_t a, uint32_t b) {
+	void SetAB(uint32_t a, uint32_t b) {
 		a_ = a;
 		b_ = b;
 	}
@@ -106,9 +112,9 @@ public:
 	}
 
 	void Reset() {
-		SetInput(0, 0);
+		SetAB(0, 0);
 		SetFunction({ 0 });
-		result_ = 0;
+		c_ = 0;
 		n_ = 0;
 		z_ = 0;
 	}
@@ -121,42 +127,42 @@ public:
 		}
 		switch (f_.func) {
 		case ALUFunctionTypes::AND:
-			result_ = a & b;
+			c_ = a & b;
 			break;
 		case ALUFunctionTypes::OR:
-			result_ = a | b;
+			c_ = a | b;
 			break;
 		case ALUFunctionTypes::INVB:
-			result_ = ~b;
+			c_ = ~b;
 			break;
 		case ALUFunctionTypes::SUM:
-			result_ = a + b;
+			c_ = a + b;
 			break;
 		default:
 			assert(0);
 		}
 		if (f_.inc) {
-			result_ += 1;
+			c_ += 1;
 		}
 		
-		uint32_t msb = (result_ >> 31) & 1;
+		uint32_t msb = (c_ >> 31) & 1;
 		n_ = (msb == 1) ? 1 : 0;
-		z_ = (result_ == 0) ? 1 : 0;
+		z_ = (c_ == 0) ? 1 : 0;
 	}
 
 	void Shift() {
-		uint32_t msb = (result_ >> 31) & 1;
+		uint32_t msb = (c_ >> 31) & 1;
 		if (f_.sll8) {
-			result_ <<= 8;
+			c_ <<= 8;
 		}
 		if (f_.sra1) {
-			result_ >>= 1;
-			result_ |= (msb << 31);
+			c_ >>= 1;
+			c_ |= (msb << 31);
 		}
 	}
 
-	uint32_t GetResult() {
-		return result_;
+	uint32_t GetC() {
+		return c_;
 	}
 
 	uint8_t GetN() {
@@ -168,11 +174,13 @@ public:
 	}
 
 private:
+	// Pipeline registers: A and B latch the bus values in front of the
+	// ALU, C holds the result behind it.
 	uint32_t a_ = 0;
 	uint32_t b_ = 0;
 	ALUFunction f_{ 0 };
 	
-	uint32_t result_ = 0;
+	uint32_t c_ = 0;
 	uint8_t n_ = 0;
 	uint8_t z_ = 0;
 };

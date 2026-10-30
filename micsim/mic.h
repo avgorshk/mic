@@ -51,9 +51,10 @@ public:
 			return halt_;
 		}
 
-		ReadRegisters();
-		RunALU();
-		WriteRegisters();
+		// One machine cycle = 3 micro-cycles:
+		ReadRegistersToAB();   // 1: buses -> pipeline registers A, B
+		RunALUToC();           // 2: ALU -> pipeline register C
+		WriteRegistersFromC(); // 3: C -> register file (+ memory, IFU)
 		return halt_;
 	}
 
@@ -107,7 +108,9 @@ private:
 		jmpc_ = inst.GetJMPC();
 	}
 
-	void ReadRegisters() {
+	// Micro-cycle 1: mux the A and B buses and latch the values into
+	// the pipeline registers A and B.
+	void ReadRegistersToAB() {
 		uint32_t bus_a_ = 0;
 		switch (signals_.a_read) {
 		case AREAD_MDR:
@@ -178,16 +181,20 @@ private:
 			assert(0);
 		}
 
-		alu_.SetInput(bus_a_, bus_b_);
+		alu_.SetAB(bus_a_, bus_b_);
 	}
 
-	void RunALU() {
+	// Micro-cycle 2: the ALU core runs on A/B; the result (with the
+	// shift post-processing) lands in pipeline register C.
+	void RunALUToC() {
 		alu_.Execute();
 		alu_.Shift();
 	}
 
-	void WriteRegisters() {
-		uint32_t bus_c_ = alu_.GetResult();
+	// Micro-cycle 3: write pipeline register C back to the register
+	// file, then complete the cycle's memory and IFU side effects.
+	void WriteRegistersFromC() {
+		uint32_t bus_c_ = alu_.GetC();
 		if (signals_.write_cpp) regs_.cpp = bus_c_;
 		if (signals_.write_h) regs_.h = bus_c_;
 		if (signals_.write_lv) regs_.lv = bus_c_;
