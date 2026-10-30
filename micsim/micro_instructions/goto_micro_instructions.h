@@ -20,11 +20,27 @@ public:
 	GOTO2MicroInstruction() {
 		// Target = OPC + sign-extended 16-bit offset; the MBR2 read
 		// consumes the offset, then write_pc flushes the queue and
-		// refills from the target. The trailing MAIN stalls until the
-		// first target block lands and dispatches it.
+		// refills from the target.
 		ALU_ADD(inst_);
 		REG_READ_A(inst_, MBR2_SIGNED);
 		REG_ASSIGN(inst_, OPC, pc);
-		inst_.next_address = MAIN_ADDR;
+		inst_.next_address = GOTO_ADDR + 2;
+	}
+};
+
+class GOTO3MicroInstruction : public MicroInstruction {
+public:
+	GOTO3MicroInstruction() {
+		// Refill wait: the target block is in flight; it delivers at
+		// this cycle's edge and is visible from GOTO4.
+		inst_.next_address = GOTO_ADDR + 3;
+	}
+};
+
+class GOTO4MicroInstruction : public MicroInstruction {
+public:
+	GOTO4MicroInstruction() {
+		inst_.jmpc = 1;
+		inst_.next_address = 0;
 	}
 };

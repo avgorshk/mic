@@ -193,7 +193,7 @@ TEST_CASE("IOR") {
 }
 
 TEST_CASE("DUP") {
-	std::vector<uint8_t> program = { DUP_ADDR };
+	std::vector<uint8_t> program = { DUP_ADDR, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -206,15 +206,14 @@ TEST_CASE("DUP") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // NOP-dispatch -> DUP
 	mic.Cycle(); // DUP1
-	mic.Cycle(); // DUP2 (fused dispatch -> padding byte 0 = NOP)
-	mic.Cycle(); // NOP (delivers DUP2's pending write)
+	mic.Cycle(); // DUP2 (fused dispatch -> HALT)
+	mic.Cycle(); // HALT1 (delivers DUP2's pending write)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp + 1);
-	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.pc == program.size());
 
 	auto output = memory.GetData(data.size() + 1);
 	CHECK(output[sp + 1] == data[sp]);
@@ -246,7 +245,7 @@ TEST_CASE("POP") {
 }
 
 TEST_CASE("SWAP") {
-	std::vector<uint8_t> program = { SWAP_ADDR };
+	std::vector<uint8_t> program = { SWAP_ADDR, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 40, 50 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -259,18 +258,18 @@ TEST_CASE("SWAP") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // NOP-dispatch -> SWAP
 	mic.Cycle(); // SWAP1
 	mic.Cycle(); // SWAP2
 	mic.Cycle(); // SWAP3
 	mic.Cycle(); // SWAP4
 	mic.Cycle(); // SWAP5
-	mic.Cycle(); // SWAP6 (fused dispatch -> padding byte 0 = NOP)
+	mic.Cycle(); // SWAP6 (fused dispatch -> HALT)
+	mic.Cycle(); // HALT1
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp);
-	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.pc == program.size());
 	CHECK(regs.tos == data[sp - 1]);
 
 	auto output = memory.GetData(data.size());
@@ -344,7 +343,7 @@ TEST_CASE("WIDE_ISTORE") {
 }
 
 TEST_CASE("BIPUSH") {
-	std::vector<uint8_t> program = { BIPUSH_ADDR, 0x7 };
+	std::vector<uint8_t> program = { BIPUSH_ADDR, 0x7, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -356,15 +355,14 @@ TEST_CASE("BIPUSH") {
 	MIC mic(&memory);
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN (queue front = the operand)
+	mic.Cycle(); // NOP-dispatch -> BIPUSH (queue front = the operand)
 	mic.Cycle(); // BIPUSH1 (SP+1)
 	mic.Cycle(); // BIPUSH2 (TOS = sign-extended operand, fused dispatch)
-	mic.Cycle(); // NOP (dispatched; delivers BIPUSH2's pending write)
+	mic.Cycle(); // HALT1 (delivers BIPUSH2's pending write)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp + 1);
-	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.pc == program.size());
 	CHECK(regs.tos == program[1]);
 
 	auto output = memory.GetData(data.size() + 1);
@@ -416,8 +414,7 @@ TEST_CASE("IF_ICMPEQ Nonequal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // NOP-dispatch -> IF_ICMPEQ
 	mic.Cycle(); // IF_ICMPEQ1
 	mic.Cycle(); // IF_ICMPEQ2
 	mic.Cycle(); // IF_ICMPEQ3
@@ -551,8 +548,7 @@ TEST_CASE("IFLT More") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // NOP-dispatch -> IFLT
 	mic.Cycle(); // IFLT1
 	mic.Cycle(); // IFLT2
 	mic.Cycle(); // IFLT3
@@ -580,8 +576,7 @@ TEST_CASE("IFLT Equal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // NOP-dispatch -> IFLT
 	mic.Cycle(); // IFLT1
 	mic.Cycle(); // IFLT2
 	mic.Cycle(); // IFLT3
@@ -639,8 +634,7 @@ TEST_CASE("IFEQ Nonequal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // NOP-dispatch -> IFEQ
 	mic.Cycle(); // IFEQ1
 	mic.Cycle(); // IFEQ2
 	mic.Cycle(); // IFEQ3
@@ -682,8 +676,7 @@ TEST_CASE("INVOKEVIRTUAL") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN (queue front = 16-bit index)
+	mic.Cycle(); // NOP-dispatch -> INVOKEVIRTUAL (queue front = 16-bit index)
 	mic.Cycle(); // INVOKEVIRTUAL1 (H = index)
 	mic.Cycle(); // INVOKEVIRTUAL2 (MAR = CPP + index, rd)
 	mic.Cycle(); // INVOKEVIRTUAL3 (OPC = return address)
@@ -745,8 +738,7 @@ TEST_CASE("IRETURN") {
 	mic.SetTOS(data[sp]);
 	mic.SetLV(memory.GetDataSegmentAddress() + 4);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // NOP-dispatch -> IRETURN
 	mic.Cycle(); // IRETURN1
 	mic.Cycle(); // IRETURN2
 	mic.Cycle(); // IRETURN3
@@ -927,8 +919,7 @@ TEST_CASE("ISHR") {
 		MIC mic(&memory);
 		mic.SetTOS(1);
 
-		mic.Cycle(); // NOP
-		mic.Cycle(); // MAIN (queue front = HALT)
+		mic.Cycle(); // NOP-dispatch -> ISHR (queue front = HALT)
 		CHECK(mic.GetRegisters().mbr == HALT_ADDR);
 		mic.Cycle(); // ISHR
 		CHECK(mic.GetRegisters().tos == 0);

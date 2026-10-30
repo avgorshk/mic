@@ -83,6 +83,8 @@ public:
 
 		memory_[GOTO_ADDR] = GOTO1MicroInstruction();
 		memory_[GOTO_ADDR + 1] = GOTO2MicroInstruction();
+		memory_[GOTO_ADDR + 2] = GOTO3MicroInstruction();
+		memory_[GOTO_ADDR + 3] = GOTO4MicroInstruction();
 
 		memory_[IRETURN_ADDR] = IRETURN1MicroInstruction();
 		memory_[IRETURN_ADDR + 1] = IRETURN2MicroInstruction();
@@ -118,7 +120,6 @@ public:
 		memory_[F_ADDR + 1] = F2MicroInstruction();
 
 		memory_[HALT_ADDR] = HALTMicroInstruction();
-		memory_[MAIN_ADDR] = MAINMicroInstruction();
 
 		memory_[WIDE_ILOAD_ADDR] = WIDE_ILOAD1MicroInstruction();
 		memory_[WIDE_ILOAD_ADDR + 1] = WIDE_ILOAD2MicroInstruction();
