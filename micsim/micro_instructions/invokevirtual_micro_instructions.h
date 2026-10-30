@@ -160,8 +160,12 @@ public:
 class INVOKEVIRTUAL16MicroInstruction : public MicroInstruction {
 public:
 	INVOKEVIRTUAL16MicroInstruction() {
+		// LV = TOS and dispatch in one cycle: the callee's opcode has
+		// been at the queue front since the header bytes were consumed
+		// (IV5/IV6/IV9/IV10), so no stall is possible here.
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, lv);
-		inst_.next_address = MAIN_ADDR;
+		inst_.jmpc = 1;
+		inst_.next_address = 0;
 	}
 };

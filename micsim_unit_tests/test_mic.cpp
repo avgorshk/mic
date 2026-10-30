@@ -700,7 +700,7 @@ TEST_CASE("INVOKEVIRTUAL") {
 	mic.Cycle(); // INVOKEVIRTUAL13 (MDR = OPC, wr)
 	mic.Cycle(); // INVOKEVIRTUAL14 (SP+1, MAR)
 	mic.Cycle(); // INVOKEVIRTUAL15 (MDR = LV, wr)
-	mic.Cycle(); // INVOKEVIRTUAL16 (LV = TOS)
+	mic.Cycle(); // INVOKEVIRTUAL16 (LV = TOS, fused dispatch -> BIPUSH)
 
 	auto output = memory.GetData(data.size() + local_vars_count + 1 /* pc */ + 1 /* lv */);
 	auto objref = output[4];
@@ -712,11 +712,10 @@ TEST_CASE("INVOKEVIRTUAL") {
 
 	auto regs = mic.GetRegisters();
 	CHECK(regs.sp == memory.GetDataSegmentAddress() + data.size() + local_vars_count + 1);
-	// PC = the callee's first opcode (the queue front), one past the
-	// invokevirtual's own bytes.
-	CHECK(regs.pc == 8);
+	// PC = one past the callee's first opcode: IV16's dispatch consumed it.
+	CHECK(regs.pc == 9);
 	CHECK(regs.lv == memory.GetDataSegmentAddress() + 4);
-	CHECK(regs.mbr == BIPUSH_ADDR);
+	CHECK(regs.mbr == 0x0);
 }
 
 TEST_CASE("IRETURN") {
