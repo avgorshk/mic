@@ -38,7 +38,7 @@ class IFLT4MicroInstruction : public MicroInstruction {
 public:
 	IFLT4MicroInstruction() {
 		ALU_PASS_B(inst_);
-		REG_READ(inst_, OPC);
+		REG_READ_B(inst_, OPC);
 		inst_.jamn = 1;
 		inst_.next_address = F_ADDR;
 	}

@@ -23,7 +23,8 @@ class INVOKEVIRTUAL2MicroInstruction : public MicroInstruction {
 public:
 	INVOKEVIRTUAL2MicroInstruction() {
 		ALU_ADD(inst_);
-		REG_READ(inst_, H);
+		REG_READ_A(inst_, H);
+		REG_READ_B(inst_, H);
 		REG_ASSIGN(inst_, CPP, mar);
 		inst_.mem_rd = 1;
 		inst_.next_address = INVOKEVIRTUAL_ADDR + 2;
@@ -67,7 +68,7 @@ public:
 	INVOKEVIRTUAL6MicroInstruction() {
 		ALU_OR(inst_);
 		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
-		REG_READ(inst_, H);
+		REG_READ_B(inst_, H);
 		inst_.next_address = INVOKEVIRTUAL_ADDR + 6;
 	}
 };
@@ -76,6 +77,7 @@ class INVOKEVIRTUAL7MicroInstruction : public MicroInstruction {
 public:
 	INVOKEVIRTUAL7MicroInstruction() {
 		ALU_SUB(inst_);
+		REG_READ_A(inst_, H);
 		REG_ASSIGN(inst_, SP, tos);
 		inst_.next_address = INVOKEVIRTUAL_ADDR + 7;
 	}
@@ -104,7 +106,7 @@ public:
 	INVOKEVIRTUAL10MicroInstruction() {
 		ALU_OR(inst_);
 		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
-		REG_READ(inst_, H);
+		REG_READ_B(inst_, H);
 		inst_.next_address = INVOKEVIRTUAL_ADDR + 10;
 	}
 };
@@ -113,6 +115,7 @@ class INVOKEVIRTUAL11MicroInstruction : public MicroInstruction {
 public:
 	INVOKEVIRTUAL11MicroInstruction() {
 		ALU_ADD_INC(inst_);
+		REG_READ_A(inst_, H);
 		REG_ASSIGN(inst_, SP, mdr);
 		inst_.mem_wr = 1;
 		inst_.next_address = INVOKEVIRTUAL_ADDR + 11;

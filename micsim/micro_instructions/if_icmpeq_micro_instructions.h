@@ -56,7 +56,8 @@ class IF_ICMPEQ6MicroInstruction : public MicroInstruction {
 public:
 	IF_ICMPEQ6MicroInstruction() {
 		ALU_SUB(inst_);
-		REG_READ(inst_, OPC);
+		REG_READ_A(inst_, H);
+		REG_READ_B(inst_, OPC);
 		inst_.jamz = 1;
 		inst_.next_address = F_ADDR;
 	}

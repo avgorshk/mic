@@ -38,7 +38,7 @@ class IFEQ4MicroInstruction : public MicroInstruction {
 public:
 	IFEQ4MicroInstruction() {
 		ALU_PASS_B(inst_);
-		REG_READ(inst_, OPC);
+		REG_READ_B(inst_, OPC);
 		inst_.jamz = 1;
 		inst_.next_address = F_ADDR;
 	}

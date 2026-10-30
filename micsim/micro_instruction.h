@@ -121,7 +121,7 @@ protected:
 	MicroInstructionEncoding inst_ = { 0 };
 };
 
-#define REG_READ(INST, IN) \
+#define REG_READ_B(INST, IN) \
 	INST.b_read = BREAD_##IN;
 
 #define REG_READ_A(INST, IN) \

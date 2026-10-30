@@ -58,6 +58,7 @@ class SWAP6MicroInstruction : public MicroInstruction {
 public:
 	SWAP6MicroInstruction() {
 		ALU_PASS_A(inst_);
+		REG_READ_A(inst_, H);
 		REG_ASSIGN0(inst_, tos);
 		inst_.jmpc = 1;
 		inst_.next_address = 0;
