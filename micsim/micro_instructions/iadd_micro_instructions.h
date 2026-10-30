@@ -17,7 +17,7 @@ public:
 class IADD2MicroInstruction : public MicroInstruction {
 public:
 	IADD2MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, h);
 		inst_.next_address = IADD_ADDR + 2;
 	}

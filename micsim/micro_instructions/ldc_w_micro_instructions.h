@@ -17,8 +17,8 @@ public:
 class LDC_W2MicroInstruction : public MicroInstruction {
 public:
 	LDC_W2MicroInstruction() {
-		ALU_SLL8_B(inst_);
-		REG_ASSIGN(inst_, MBR_UNSIGNED, h);
+		ALU_SLL8_A(inst_);
+		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
 		inst_.next_address = LDC_W_ADDR + 2;
 	}
 };
@@ -27,7 +27,8 @@ class LDC_W3MicroInstruction : public MicroInstruction {
 public:
 	LDC_W3MicroInstruction() {
 		ALU_OR(inst_);
-		REG_ASSIGN(inst_, MBR_UNSIGNED, h);
+		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
+		REG_READ(inst_, H);
 		inst_.next_address = LDC_W_ADDR + 3;
 	}
 };

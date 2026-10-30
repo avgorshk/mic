@@ -17,7 +17,7 @@ public:
 class IFEQ2MicroInstruction : public MicroInstruction {
 public:
 	IFEQ2MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, opc);
 		inst_.next_address = IFEQ_ADDR + 2;
 	}
@@ -26,7 +26,7 @@ public:
 class IFEQ3MicroInstruction : public MicroInstruction {
 public:
 	IFEQ3MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, tos);
 		inst_.next_address = IFEQ_ADDR + 3;
 	}
@@ -35,7 +35,7 @@ public:
 class IFEQ4MicroInstruction : public MicroInstruction {
 public:
 	IFEQ4MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_READ(inst_, OPC);
 		inst_.jamz = 1;
 		inst_.next_address = F_ADDR;

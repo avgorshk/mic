@@ -7,7 +7,7 @@ constexpr uint32_t ISTORE_ADDR = 0x36;
 class ISTORE1MicroInstruction : public MicroInstruction {
 public:
 	ISTORE1MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, LV, h);
 		inst_.next_address = ISTORE_ADDR + 1;
 	}
@@ -17,7 +17,8 @@ class ISTORE2MicroInstruction : public MicroInstruction {
 public:
 	ISTORE2MicroInstruction() {
 		ALU_ADD(inst_);
-		REG_ASSIGN(inst_, MBR_UNSIGNED, mar);
+		REG_ASSIGN_A(inst_, MBR_UNSIGNED, mar);
+		REG_READ(inst_, H);
 		inst_.next_address = ISTORE_ADDR + 2;
 	}
 };
@@ -25,7 +26,7 @@ public:
 class ISTORE3MicroInstruction : public MicroInstruction {
 public:
 	ISTORE3MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, mdr);
 		inst_.mem_wr = 1;
 		inst_.next_address = ISTORE_ADDR + 3;
@@ -55,7 +56,7 @@ public:
 class ISTORE6MicroInstruction : public MicroInstruction {
 public:
 	ISTORE6MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, tos);
 		inst_.next_address = MAIN_ADDR;
 	}

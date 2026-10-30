@@ -26,8 +26,8 @@ public:
 class BIPUSH3MicroInstruction : public MicroInstruction {
 public:
 	BIPUSH3MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
-		REG_ASSIGN2(inst_, MBR_SIGNED, tos, mdr);
+		ALU_PASS_A(inst_);
+		REG_ASSIGN2_A(inst_, MBR_SIGNED, tos, mdr);
 		inst_.mem_wr = 1;
 		inst_.next_address = MAIN_ADDR;
 	}

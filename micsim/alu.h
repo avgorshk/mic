@@ -3,13 +3,13 @@
 #include <assert.h>
 #include <stdint.h>
 
-#define ALU_ASSIGN_B(INST) \
+#define ALU_PASS_B(INST) \
 	ALUFunction alu = { 0 }; \
 	alu.func = ALUFunctionTypes::OR; \
 	alu.enb = 1; \
 	INST.alu = alu;
 
-#define ALU_ASSIGN_H(INST) \
+#define ALU_PASS_A(INST) \
 	ALUFunction alu = { 0 }; \
 	alu.func = ALUFunctionTypes::OR; \
 	alu.ena = 1; \
@@ -53,10 +53,10 @@
 	alu.inva = 1; \
 	INST.alu = alu;
 
-#define ALU_SLL8_B(INST) \
+#define ALU_SLL8_A(INST) \
 	ALUFunction alu = { 0 }; \
 	alu.func = ALUFunctionTypes::OR; \
-	alu.enb = 1; \
+	alu.ena = 1; \
 	alu.sll8 = 1; \
 	INST.alu = alu;
 

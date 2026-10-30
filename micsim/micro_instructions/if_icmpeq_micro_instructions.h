@@ -26,7 +26,7 @@ public:
 class IF_ICMPEQ3MicroInstruction : public MicroInstruction {
 public:
 	IF_ICMPEQ3MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, h);
 		inst_.mem_rd = 1;
 		inst_.next_address = IF_ICMPEQ_ADDR + 3;
@@ -36,7 +36,7 @@ public:
 class IF_ICMPEQ4MicroInstruction : public MicroInstruction {
 public:
 	IF_ICMPEQ4MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, opc);
 		inst_.next_address = IF_ICMPEQ_ADDR + 4;
 	}
@@ -45,7 +45,7 @@ public:
 class IF_ICMPEQ5MicroInstruction : public MicroInstruction {
 public:
 	IF_ICMPEQ5MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, tos);
 		inst_.next_address = IF_ICMPEQ_ADDR + 5;
 	}

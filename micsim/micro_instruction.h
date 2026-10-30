@@ -5,16 +5,30 @@
 
 constexpr uint16_t HALT_SIGNAL = 0xFE;
 
-enum MicroInstructionRead {
-	READ_MDR = 1,
-	READ_PC = 2,
-	READ_MBR_UNSIGNED = 3,
-	READ_MBR_SIGNED = 4,
-	READ_SP = 5,
-	READ_LV = 6,
-	READ_CPP = 7,
-	READ_TOS = 8,
-	READ_OPC = 9
+// A bus: 9 sources. H = 0 so a pre-rework MIR (a_read = 0) keeps its
+// exact old behavior (A was always H).
+enum MicroInstructionARead {
+	AREAD_H = 0,
+	AREAD_MDR = 1,
+	AREAD_MBR_SIGNED = 2,
+	AREAD_MBR_UNSIGNED = 3,
+	AREAD_SP = 4,
+	AREAD_LV = 5,
+	AREAD_CPP = 6,
+	AREAD_TOS = 7,
+	AREAD_OPC = 8
+};
+
+// B bus: 8 sources. MBR is readable via the A bus only.
+enum MicroInstructionBRead {
+	BREAD_MDR = 0,
+	BREAD_SP = 1,
+	BREAD_LV = 2,
+	BREAD_CPP = 3,
+	BREAD_TOS = 4,
+	BREAD_OPC = 5,
+	BREAD_PC = 6,
+	BREAD_H = 7
 };
 
 struct MicroInstructionEncoding {
@@ -45,8 +59,9 @@ struct MicroInstructionEncoding {
 	uint8_t mem_wr : 1;
 	uint8_t mem_fetch : 1;
 
-	// B Bus (4)
-	uint8_t read : 4;
+	// A Bus (4), B Bus (3)
+	uint8_t a_read : 4;
+	uint8_t b_read : 3;
 };
 
 class MicroInstruction {
@@ -68,46 +83,11 @@ public:
 		signals.write_opc = inst_.write_opc;
 		signals.write_h = inst_.write_h;
 
-		// Read Signals (9)
-		assert(inst_.read <= 9);
-		switch (inst_.read) {
-		case READ_MDR: {
-			signals.read_mdr = 1;
-			break;
-		}
-		case READ_PC: {
-			signals.read_pc = 1;
-			break;
-		}
-		case READ_MBR_UNSIGNED: {
-			signals.read_mbr_unsigned = 1;
-			break;
-		}
-		case READ_MBR_SIGNED: {
-			signals.read_mbr_signed = 1;
-			break;
-		}
-		case READ_SP: {
-			signals.read_sp = 1;
-			break;
-		}
-		case READ_LV: {
-			signals.read_lv = 1;
-			break;
-		}
-		case READ_CPP: {
-			signals.read_cpp = 1;
-			break;
-		}
-		case READ_TOS: {
-			signals.read_tos = 1;
-			break;
-		}
-		case READ_OPC: {
-			signals.read_opc = 1;
-			break;
-		}
-		}
+		// Bus Read Signals (A: 4 bits, B: 3 bits)
+		assert(inst_.a_read <= 8);
+		assert(inst_.b_read <= 7);
+		signals.a_read = inst_.a_read;
+		signals.b_read = inst_.b_read;
 
 		// Memory Signals (3)
 		signals.mem_rd = inst_.mem_rd;
@@ -142,16 +122,28 @@ protected:
 };
 
 #define REG_READ(INST, IN) \
-	INST.read = READ_##IN;
+	INST.b_read = BREAD_##IN;
+
+#define REG_READ_A(INST, IN) \
+	INST.a_read = AREAD_##IN;
 
 #define REG_ASSIGN0(INST, OUT) \
 	INST.write_##OUT = 1;
 
 #define REG_ASSIGN(INST, IN, OUT) \
-	INST.read = READ_##IN; \
+	INST.b_read = BREAD_##IN; \
+	INST.write_##OUT = 1;
+
+#define REG_ASSIGN_A(INST, IN, OUT) \
+	INST.a_read = AREAD_##IN; \
 	INST.write_##OUT = 1;
 
 #define REG_ASSIGN2(INST, IN, OUT1, OUT2) \
-	INST.read = READ_##IN; \
+	INST.b_read = BREAD_##IN; \
+	INST.write_##OUT1 = 1; \
+	INST.write_##OUT2 = 1;
+
+#define REG_ASSIGN2_A(INST, IN, OUT1, OUT2) \
+	INST.a_read = AREAD_##IN; \
 	INST.write_##OUT1 = 1; \
 	INST.write_##OUT2 = 1;

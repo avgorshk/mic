@@ -36,7 +36,7 @@ public:
 class POP3MicroInstruction : public MicroInstruction {
 public:
 	POP3MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, tos);
 		inst_.jmpc = 1;
 		inst_.next_address = 0;

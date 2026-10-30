@@ -70,24 +70,73 @@ private:
 	}
 
 	void ReadRegisters() {
-		uint32_t bus_b_ = 0;
-		if (signals_.read_cpp) bus_b_ = regs_.cpp;
-		if (signals_.read_lv) bus_b_ = regs_.lv;
-		if (signals_.read_mdr) bus_b_ = regs_.mdr;
-		if (signals_.read_opc) bus_b_ = regs_.opc;
-		if (signals_.read_pc) bus_b_ = regs_.pc;
-		if (signals_.read_sp) bus_b_ = regs_.sp;
-		if (signals_.read_tos) bus_b_ = regs_.tos;
-		if (signals_.read_mbr_unsigned) bus_b_ = regs_.mbr;
-		if (signals_.read_mbr_signed) {
+		uint32_t bus_a_ = 0;
+		switch (signals_.a_read) {
+		case AREAD_MDR:
+			bus_a_ = regs_.mdr;
+			break;
+		case AREAD_MBR_SIGNED: {
 			uint32_t sign = (regs_.mbr >> 7);
-			bus_b_ = 0;
-			if (sign == 1) {
-				bus_b_ = 0xFFFFFF00;
-			}
-			bus_b_ |= regs_.mbr;
+			bus_a_ = (sign == 1) ? 0xFFFFFF00 : 0;
+			bus_a_ |= regs_.mbr;
+			break;
 		}
-		alu_.SetInput(regs_.h, bus_b_);
+		case AREAD_MBR_UNSIGNED:
+			bus_a_ = regs_.mbr;
+			break;
+		case AREAD_SP:
+			bus_a_ = regs_.sp;
+			break;
+		case AREAD_LV:
+			bus_a_ = regs_.lv;
+			break;
+		case AREAD_CPP:
+			bus_a_ = regs_.cpp;
+			break;
+		case AREAD_TOS:
+			bus_a_ = regs_.tos;
+			break;
+		case AREAD_OPC:
+			bus_a_ = regs_.opc;
+			break;
+		case AREAD_H:
+			bus_a_ = regs_.h;
+			break;
+		default:
+			assert(0);
+		}
+
+		uint32_t bus_b_ = 0;
+		switch (signals_.b_read) {
+		case BREAD_MDR:
+			bus_b_ = regs_.mdr;
+			break;
+		case BREAD_SP:
+			bus_b_ = regs_.sp;
+			break;
+		case BREAD_LV:
+			bus_b_ = regs_.lv;
+			break;
+		case BREAD_CPP:
+			bus_b_ = regs_.cpp;
+			break;
+		case BREAD_TOS:
+			bus_b_ = regs_.tos;
+			break;
+		case BREAD_OPC:
+			bus_b_ = regs_.opc;
+			break;
+		case BREAD_PC:
+			bus_b_ = regs_.pc;
+			break;
+		case BREAD_H:
+			bus_b_ = regs_.h;
+			break;
+		default:
+			assert(0);
+		}
+
+		alu_.SetInput(bus_a_, bus_b_);
 	}
 
 	void RunALU() {

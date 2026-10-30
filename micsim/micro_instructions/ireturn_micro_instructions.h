@@ -7,7 +7,7 @@ constexpr uint32_t IRETURN_ADDR = 0xAC;
 class IRETURN1MicroInstruction : public MicroInstruction {
 public:
 	IRETURN1MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN2(inst_, LV, mar, sp);
 		inst_.mem_rd = 1;
 		inst_.next_address = IRETURN_ADDR + 1;
@@ -24,7 +24,7 @@ public:
 class IRETURN3MicroInstruction : public MicroInstruction {
 public:
 	IRETURN3MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN2(inst_, MDR, lv, mar);
 		inst_.mem_rd = 1;
 		inst_.next_address = IRETURN_ADDR + 3;
@@ -43,7 +43,7 @@ public:
 class IRETURN5MicroInstruction : public MicroInstruction {
 public:
 	IRETURN5MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, pc);
 		inst_.mem_rd = 1;
 		inst_.mem_fetch = 1;
@@ -54,7 +54,7 @@ public:
 class IRETURN6MicroInstruction : public MicroInstruction {
 public:
 	IRETURN6MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, SP, mar);
 		inst_.next_address = IRETURN_ADDR + 6;
 	}
@@ -63,7 +63,7 @@ public:
 class IRETURN7MicroInstruction : public MicroInstruction {
 public:
 	IRETURN7MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, lv);
 		inst_.next_address = IRETURN_ADDR + 7;
 	}
@@ -72,7 +72,7 @@ public:
 class IRETURN8MicroInstruction : public MicroInstruction {
 public:
 	IRETURN8MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, mdr);
 		inst_.mem_wr = 1;
 		inst_.next_address = MAIN_ADDR;

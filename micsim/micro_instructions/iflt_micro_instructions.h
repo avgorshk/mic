@@ -17,7 +17,7 @@ public:
 class IFLT2MicroInstruction : public MicroInstruction {
 public:
 	IFLT2MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, opc);
 		inst_.next_address = IFLT_ADDR + 2;
 	}
@@ -26,7 +26,7 @@ public:
 class IFLT3MicroInstruction : public MicroInstruction {
 public:
 	IFLT3MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, tos);
 		inst_.next_address = IFLT_ADDR + 3;
 	}
@@ -35,7 +35,7 @@ public:
 class IFLT4MicroInstruction : public MicroInstruction {
 public:
 	IFLT4MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_READ(inst_, OPC);
 		inst_.jamn = 1;
 		inst_.next_address = F_ADDR;

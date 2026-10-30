@@ -17,7 +17,7 @@ public:
 class SWAP2MicroInstruction : public MicroInstruction {
 public:
 	SWAP2MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, SP, mar);
 		inst_.next_address = SWAP_ADDR + 2;
 	}
@@ -26,7 +26,7 @@ public:
 class SWAP3MicroInstruction : public MicroInstruction {
 public:
 	SWAP3MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, h);
 		inst_.mem_wr = 1;
 		inst_.next_address = SWAP_ADDR + 3;
@@ -36,7 +36,7 @@ public:
 class SWAP4MicroInstruction : public MicroInstruction {
 public:
 	SWAP4MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, mdr);
 		inst_.next_address = SWAP_ADDR + 4;
 	}
@@ -55,7 +55,7 @@ public:
 class SWAP6MicroInstruction : public MicroInstruction {
 public:
 	SWAP6MicroInstruction() {
-		ALU_ASSIGN_H(inst_);
+		ALU_PASS_A(inst_);
 		REG_ASSIGN0(inst_, tos);
 		inst_.next_address = MAIN_ADDR;
 	}

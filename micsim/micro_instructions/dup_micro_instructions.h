@@ -16,7 +16,7 @@ public:
 class DUP2MicroInstruction : public MicroInstruction {
 public:
 	DUP2MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, mdr);
 		inst_.mem_wr = 1;
 		inst_.next_address = MAIN_ADDR;

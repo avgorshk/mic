@@ -7,7 +7,7 @@ constexpr uint32_t ILOAD_ADDR = 0x17;
 class ILOAD1MicroInstruction : public MicroInstruction {
 public:
 	ILOAD1MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, LV, h);
 		inst_.next_address = ILOAD_ADDR + 1;
 	}
@@ -17,7 +17,8 @@ class ILOAD2MicroInstruction : public MicroInstruction {
 public:
 	ILOAD2MicroInstruction() {
 		ALU_ADD(inst_);
-		REG_ASSIGN(inst_, MBR_UNSIGNED, mar);
+		REG_ASSIGN_A(inst_, MBR_UNSIGNED, mar);
+		REG_READ(inst_, H);
 		inst_.mem_rd = 1;
 		inst_.next_address = ILOAD_ADDR + 2;
 	}
@@ -46,7 +47,7 @@ public:
 class ILOAD5MicroInstruction : public MicroInstruction {
 public:
 	ILOAD5MicroInstruction() {
-		ALU_ASSIGN_B(inst_);
+		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, tos);
 		inst_.next_address = MAIN_ADDR;
 	}
