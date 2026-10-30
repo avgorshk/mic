@@ -17,10 +17,8 @@ public:
 class IOR2MicroInstruction : public MicroInstruction {
 public:
 	IOR2MicroInstruction() {
-		// fill the read-latency slot with MAIN's PC+1 + operand fetch
-		ALU_INC_B(inst_);
-		REG_ASSIGN(inst_, PC, pc);
-		inst_.mem_fetch = 1;
+		// read-latency pad: the operand delivers at this cycle's edge
+		// and is visible from IOR3.
 		inst_.next_address = IOR_ADDR + 2;
 	}
 };

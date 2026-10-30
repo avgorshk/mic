@@ -17,6 +17,8 @@ public:
 class SWAP2MicroInstruction : public MicroInstruction {
 public:
 	SWAP2MicroInstruction() {
+		// read-latency pad: the word delivers at this cycle's edge and
+		// is visible from SWAP3.
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, SP, mar);
 		inst_.next_address = SWAP_ADDR + 2;
@@ -57,6 +59,7 @@ public:
 	SWAP6MicroInstruction() {
 		ALU_PASS_A(inst_);
 		REG_ASSIGN0(inst_, tos);
-		inst_.next_address = MAIN_ADDR;
+		inst_.jmpc = 1;
+		inst_.next_address = 0;
 	}
 };

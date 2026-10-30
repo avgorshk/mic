@@ -17,10 +17,8 @@ public:
 class ISUB2MicroInstruction : public MicroInstruction {
 public:
 	ISUB2MicroInstruction() {
-		// fill the read-latency slot with MAIN's PC+1 + operand fetch
-		ALU_INC_B(inst_);
-		REG_ASSIGN(inst_, PC, pc);
-		inst_.mem_fetch = 1;
+		// read-latency pad: the operand delivers at this cycle's edge
+		// and is visible from ISUB3.
 		inst_.next_address = ISUB_ADDR + 2;
 	}
 };

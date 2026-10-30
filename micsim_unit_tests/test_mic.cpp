@@ -26,12 +26,11 @@ TEST_CASE("ILOAD") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 
 	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // ILOAD1
-	mic.Cycle(); // ILOAD2
-	mic.Cycle(); // ILOAD3
-	mic.Cycle(); // ILOAD4
-	mic.Cycle(); // ILOAD5
+	mic.Cycle(); // MAIN (dispatch -> ILOAD; queue front = index)
+	mic.Cycle(); // ILOAD1 (MAR = LV + index, rd)
+	mic.Cycle(); // ILOAD2 (SP+1)
+	mic.Cycle(); // ILOAD3 (wr)
+	mic.Cycle(); // ILOAD4 (TOS = MDR, fused dispatch -> HALT)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp + 1);
@@ -56,17 +55,12 @@ TEST_CASE("WIDE_ILOAD") {
 	MIC mic(&memory);
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // WIDE1 (wait for the widened opcode to land in MBR)
-	mic.Cycle(); // WIDE2 (dispatch to the wide routine)
-	mic.Cycle(); // WIDE_ILOAD1
-	mic.Cycle(); // WIDE_ILOAD2
-	mic.Cycle(); // WIDE_ILOAD3
-	mic.Cycle(); // WIDE_ILOAD4
-	mic.Cycle(); // WIDE_ILOAD5 (next-opcode fetch)
-	mic.Cycle(); // ILOAD3
-	mic.Cycle(); // ILOAD4
-	mic.Cycle(); // ILOAD5
+	mic.Cycle(); // MAIN (dispatch -> WIDE)
+	mic.Cycle(); // WIDE2 (dispatch on the widened opcode)
+	mic.Cycle(); // WIDE_ILOAD1 (MAR = LV + 16-bit index, rd)
+	mic.Cycle(); // WIDE_ILOAD2 (SP+1)
+	mic.Cycle(); // WIDE_ILOAD3 (wr)
+	mic.Cycle(); // WIDE_ILOAD4 (TOS = MDR, fused dispatch -> HALT)
 	auto regs = mic.GetRegisters();
 
 	auto varnum = (program[2] << 8) | program[3];
@@ -94,8 +88,8 @@ TEST_CASE("IADD") {
 
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
-	mic.Cycle(); // IADD1
-	mic.Cycle(); // IADD2
+	mic.Cycle(); // IADD1 (SP-1, rd)
+	mic.Cycle(); // IADD2 (read-latency pad)
 	mic.Cycle(); // IADD3 (fused dispatch -> HALT)
 	mic.Cycle(); // HALT1
 	auto regs = mic.GetRegisters();
@@ -154,8 +148,8 @@ TEST_CASE("IAND") {
 
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
-	mic.Cycle(); // ISUB1
-	mic.Cycle(); // ISUB2
+	mic.Cycle(); // IAND1
+	mic.Cycle(); // IAND2
 	mic.Cycle(); // IAND3 (fused dispatch -> HALT)
 	mic.Cycle(); // HALT1
 	auto regs = mic.GetRegisters();
@@ -184,8 +178,8 @@ TEST_CASE("IOR") {
 
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
-	mic.Cycle(); // ISUB1
-	mic.Cycle(); // ISUB2
+	mic.Cycle(); // IOR1
+	mic.Cycle(); // IOR2
 	mic.Cycle(); // IOR3 (fused dispatch -> HALT)
 	mic.Cycle(); // HALT1
 	auto regs = mic.GetRegisters();
@@ -215,8 +209,8 @@ TEST_CASE("DUP") {
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // DUP1
-	mic.Cycle(); // DUP2
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // DUP2 (fused dispatch -> padding byte 0 = NOP)
+	mic.Cycle(); // NOP (delivers DUP2's pending write)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp + 1);
@@ -243,7 +237,7 @@ TEST_CASE("POP") {
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // POP1
 	mic.Cycle(); // POP2
-	mic.Cycle(); // POP3
+	mic.Cycle(); // POP3 (fused dispatch -> HALT)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -272,11 +266,11 @@ TEST_CASE("SWAP") {
 	mic.Cycle(); // SWAP3
 	mic.Cycle(); // SWAP4
 	mic.Cycle(); // SWAP5
-	mic.Cycle(); // SWAP6
+	mic.Cycle(); // SWAP6 (fused dispatch -> padding byte 0 = NOP)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp);
-	CHECK(regs.pc == program.size());
+	CHECK(regs.pc == program.size() + 1);
 	CHECK(regs.tos == data[sp - 1]);
 
 	auto output = memory.GetData(data.size());
@@ -300,12 +294,11 @@ TEST_CASE("ISTORE") {
 
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
-	mic.Cycle(); // ISTORE1
-	mic.Cycle(); // ISTORE2
-	mic.Cycle(); // ISTORE3
-	mic.Cycle(); // ISTORE4
-	mic.Cycle(); // ISTORE5
-	mic.Cycle(); // ISTORE6
+	mic.Cycle(); // ISTORE1 (MAR = LV + index)
+	mic.Cycle(); // ISTORE2 (write TOS to the slot)
+	mic.Cycle(); // ISTORE3 (SP-1, rd)
+	mic.Cycle(); // ISTORE4 (read-latency pad)
+	mic.Cycle(); // ISTORE5 (TOS = MDR, fused dispatch -> HALT)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -332,18 +325,13 @@ TEST_CASE("WIDE_ISTORE") {
 	mic.SetTOS(data[sp]);
 
 	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // WIDE1 (wait for the widened opcode to land in MBR)
-	mic.Cycle(); // WIDE2 (dispatch to the wide routine)
-	mic.Cycle(); // WIDE_ISTORE1
-	mic.Cycle(); // WIDE_ISTORE2
-	mic.Cycle(); // WIDE_ISTORE3
-	mic.Cycle(); // WIDE_ISTORE4
-	mic.Cycle(); // WIDE_ISTORE5 (next-opcode fetch)
-	mic.Cycle(); // ISTORE3
-	mic.Cycle(); // ISTORE4
-	mic.Cycle(); // ISTORE5
-	mic.Cycle(); // ISTORE6
+	mic.Cycle(); // MAIN (dispatch -> WIDE)
+	mic.Cycle(); // WIDE2 (dispatch on the widened opcode)
+	mic.Cycle(); // WIDE_ISTORE1 (MAR = LV + 16-bit index)
+	mic.Cycle(); // WIDE_ISTORE2 (write TOS to the slot)
+	mic.Cycle(); // WIDE_ISTORE3 (SP-1, rd)
+	mic.Cycle(); // WIDE_ISTORE4 (read-latency pad)
+	mic.Cycle(); // WIDE_ISTORE5 (TOS = MDR, fused dispatch -> HALT)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -369,11 +357,10 @@ TEST_CASE("BIPUSH") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 
 	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // BIPUSH
-	mic.Cycle(); // BIPUSH
-	mic.Cycle(); // BIPUSH
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // MAIN (queue front = the operand)
+	mic.Cycle(); // BIPUSH1 (SP+1)
+	mic.Cycle(); // BIPUSH2 (TOS = sign-extended operand, fused dispatch)
+	mic.Cycle(); // NOP (dispatched; delivers BIPUSH2's pending write)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp + 1);
@@ -400,18 +387,14 @@ TEST_CASE("IF_ICMPEQ Equal") {
 
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // T
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
+	mic.Cycle(); // IF_ICMPEQ1
+	mic.Cycle(); // IF_ICMPEQ2
+	mic.Cycle(); // IF_ICMPEQ3
+	mic.Cycle(); // IF_ICMPEQ4
+	mic.Cycle(); // IF_ICMPEQ5
+	mic.Cycle(); // IF_ICMPEQ6 (jamz -> T)
+	mic.Cycle(); // T (OPC = branch address)
+	mic.Cycle(); // GOTO2 (write_pc: jump to the target)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 2);
@@ -435,15 +418,13 @@ TEST_CASE("IF_ICMPEQ Nonequal") {
 
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // IF_ICMPEQ
-	mic.Cycle(); // F
-	mic.Cycle(); // F
-	mic.Cycle(); // F
+	mic.Cycle(); // IF_ICMPEQ1
+	mic.Cycle(); // IF_ICMPEQ2
+	mic.Cycle(); // IF_ICMPEQ3
+	mic.Cycle(); // IF_ICMPEQ4
+	mic.Cycle(); // IF_ICMPEQ5
+	mic.Cycle(); // IF_ICMPEQ6 (jamz -> F)
+	mic.Cycle(); // F1 (discard the 2-byte offset)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 2);
@@ -454,7 +435,7 @@ TEST_CASE("IF_ICMPEQ Nonequal") {
 
 TEST_CASE("GOTO") {
 	std::vector<uint8_t> program = { GOTO_ADDR, 0x1, 0xAB, GOTO_ADDR };
-	
+
 	GlobalMemory memory(
 		PROGRAM_SEGMENT_SIZE, CONSTANT_SEGMENT_SIZE, DATA_SEGMENT_SIZE);
 	memory.SetProgram(program);
@@ -463,12 +444,8 @@ TEST_CASE("GOTO") {
 
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
+	mic.Cycle(); // GOTO1 (OPC = goto's own address)
+	mic.Cycle(); // GOTO2 (PC = OPC + 16-bit offset: jump)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.pc == ((program[1] << 8) | program[2]));
@@ -490,15 +467,10 @@ TEST_CASE("LDC_W") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 
 	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // LDC_W1
-	mic.Cycle(); // LDC_W2
-	mic.Cycle(); // LDC_W3
-	mic.Cycle(); // LDC_W4
-	mic.Cycle(); // LDC_W5 (next-opcode fetch)
-	mic.Cycle(); // ILOAD3
-	mic.Cycle(); // ILOAD4
-	mic.Cycle(); // ILOAD5
+	mic.Cycle(); // MAIN (queue front = 16-bit index)
+	mic.Cycle(); // LDC_W1 (MAR = CPP + index, rd)
+	mic.Cycle(); // LDC_W2 (SP+1)
+	mic.Cycle(); // LDC_W3 (TOS = MDR, wr, fused dispatch -> HALT)
 	auto regs = mic.GetRegisters();
 
 	auto index = ((program[1] << 8) | program[2]);
@@ -522,12 +494,11 @@ TEST_CASE("IINC") {
 	mic.SetTOS(data[sp]);
 
 	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // IINC1 (const fetch)
-	mic.Cycle(); // IINC2 (MAR + read)
-	mic.Cycle(); // IINC3 (next-opcode fetch)
-	mic.Cycle(); // IINC4 (add + write)
-	mic.Cycle(); // IINC5 (fused dispatch -> HALT)
+	mic.Cycle(); // MAIN (queue front = index)
+	mic.Cycle(); // IINC1 (MAR = LV + index, rd)
+	mic.Cycle(); // IINC2 (read-latency pad)
+	mic.Cycle(); // IINC3 (MDR = MDR + const, wr, fused dispatch -> HALT)
+	mic.Cycle(); // HALT1 (delivers IINC3's pending write)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.pc == program.size());
@@ -555,13 +526,9 @@ TEST_CASE("IFLT Less") {
 	mic.Cycle(); // IFLT1
 	mic.Cycle(); // IFLT2
 	mic.Cycle(); // IFLT3
-	mic.Cycle(); // IFLT4
-	mic.Cycle(); // T
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
+	mic.Cycle(); // IFLT4 (jamn -> T)
+	mic.Cycle(); // T (OPC = branch address)
+	mic.Cycle(); // GOTO2 (jump)
 	auto regs = mic.GetRegisters();
 
 	auto offset = ((program[1] << 8) | program[2]);
@@ -589,10 +556,8 @@ TEST_CASE("IFLT More") {
 	mic.Cycle(); // IFLT1
 	mic.Cycle(); // IFLT2
 	mic.Cycle(); // IFLT3
-	mic.Cycle(); // IFLT4
-	mic.Cycle(); // F
-	mic.Cycle(); // F
-	mic.Cycle(); // F
+	mic.Cycle(); // IFLT4 (jamn -> F)
+	mic.Cycle(); // F1 (discard the 2-byte offset)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -620,10 +585,8 @@ TEST_CASE("IFLT Equal") {
 	mic.Cycle(); // IFLT1
 	mic.Cycle(); // IFLT2
 	mic.Cycle(); // IFLT3
-	mic.Cycle(); // IFLT4
-	mic.Cycle(); // F
-	mic.Cycle(); // F
-	mic.Cycle(); // F
+	mic.Cycle(); // IFLT4 (jamn -> F)
+	mic.Cycle(); // F1 (discard the 2-byte offset)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -651,13 +614,9 @@ TEST_CASE("IFEQ Equal") {
 	mic.Cycle(); // IFEQ1
 	mic.Cycle(); // IFEQ2
 	mic.Cycle(); // IFEQ3
-	mic.Cycle(); // IFEQ4
+	mic.Cycle(); // IFEQ4 (jamz -> T)
 	mic.Cycle(); // T
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
-	mic.Cycle(); // GOTO
+	mic.Cycle(); // GOTO2 (jump)
 	auto regs = mic.GetRegisters();
 
 	auto offset = ((program[1] << 8) | program[2]);
@@ -682,13 +641,11 @@ TEST_CASE("IFEQ Nonequal") {
 
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
-	mic.Cycle(); // IFLT1
-	mic.Cycle(); // IFLT2
-	mic.Cycle(); // IFLT3
-	mic.Cycle(); // IFLT4
-	mic.Cycle(); // F
-	mic.Cycle(); // F
-	mic.Cycle(); // F
+	mic.Cycle(); // IFEQ1
+	mic.Cycle(); // IFEQ2
+	mic.Cycle(); // IFEQ3
+	mic.Cycle(); // IFEQ4 (jamz -> F)
+	mic.Cycle(); // F1 (discard the 2-byte offset)
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -726,31 +683,25 @@ TEST_CASE("INVOKEVIRTUAL") {
 	mic.SetTOS(data[sp]);
 
 	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // INVOKEVIRTUAL1
-	mic.Cycle(); // INVOKEVIRTUAL2
-	mic.Cycle(); // INVOKEVIRTUAL3
-	mic.Cycle(); // INVOKEVIRTUAL4
-	mic.Cycle(); // INVOKEVIRTUAL5
-	mic.Cycle(); // INVOKEVIRTUAL6
-	mic.Cycle(); // INVOKEVIRTUAL7
-	mic.Cycle(); // INVOKEVIRTUAL8
-	mic.Cycle(); // INVOKEVIRTUAL9
-	mic.Cycle(); // INVOKEVIRTUAL10
-	mic.Cycle(); // INVOKEVIRTUAL11
-	mic.Cycle(); // INVOKEVIRTUAL12
-	mic.Cycle(); // INVOKEVIRTUAL13
-	mic.Cycle(); // INVOKEVIRTUAL14
-	mic.Cycle(); // INVOKEVIRTUAL15
-	mic.Cycle(); // INVOKEVIRTUAL16
-	mic.Cycle(); // INVOKEVIRTUAL17
-	mic.Cycle(); // INVOKEVIRTUAL18
-	mic.Cycle(); // INVOKEVIRTUAL19
-	mic.Cycle(); // INVOKEVIRTUAL20
-	mic.Cycle(); // INVOKEVIRTUAL21
-	mic.Cycle(); // INVOKEVIRTUAL22
-	mic.Cycle(); // MAIN
-	
+	mic.Cycle(); // MAIN (queue front = 16-bit index)
+	mic.Cycle(); // INVOKEVIRTUAL1 (H = index)
+	mic.Cycle(); // INVOKEVIRTUAL2 (MAR = CPP + index, rd)
+	mic.Cycle(); // INVOKEVIRTUAL3 (OPC = return address)
+	mic.Cycle(); // INVOKEVIRTUAL4 (PC = callee address: jump)
+	mic.Cycle(); // stall (callee block in flight)
+	mic.Cycle(); // INVOKEVIRTUAL5 (H = params_hi << 8)
+	mic.Cycle(); // INVOKEVIRTUAL6 (H |= params_lo)
+	mic.Cycle(); // INVOKEVIRTUAL7 (TOS = SP - params)
+	mic.Cycle(); // INVOKEVIRTUAL8 (TOS+1, MAR)
+	mic.Cycle(); // INVOKEVIRTUAL9 (H = locals_hi << 8)
+	mic.Cycle(); // INVOKEVIRTUAL10 (H |= locals_lo)
+	mic.Cycle(); // INVOKEVIRTUAL11 (MDR = SP + locals + 1, wr)
+	mic.Cycle(); // INVOKEVIRTUAL12 (MAR, SP = MDR)
+	mic.Cycle(); // INVOKEVIRTUAL13 (MDR = OPC, wr)
+	mic.Cycle(); // INVOKEVIRTUAL14 (SP+1, MAR)
+	mic.Cycle(); // INVOKEVIRTUAL15 (MDR = LV, wr)
+	mic.Cycle(); // INVOKEVIRTUAL16 (LV = TOS)
+
 	auto output = memory.GetData(data.size() + local_vars_count + 1 /* pc */ + 1 /* lv */);
 	auto objref = output[4];
 	CHECK(objref == memory.GetDataSegmentAddress() + data.size() + local_vars_count);
@@ -758,10 +709,12 @@ TEST_CASE("INVOKEVIRTUAL") {
 	CHECK(called_proc_pc == 3);
 	auto called_proc_lv = output[data.size() + local_vars_count + 1];
 	CHECK(called_proc_lv == memory.GetDataSegmentAddress());
-	
+
 	auto regs = mic.GetRegisters();
 	CHECK(regs.sp == memory.GetDataSegmentAddress() + data.size() + local_vars_count + 1);
-	CHECK(regs.pc == program.size());
+	// PC = the callee's first opcode (the queue front), one past the
+	// invokevirtual's own bytes.
+	CHECK(regs.pc == 8);
 	CHECK(regs.lv == memory.GetDataSegmentAddress() + 4);
 	CHECK(regs.mbr == BIPUSH_ADDR);
 }
@@ -799,22 +752,24 @@ TEST_CASE("IRETURN") {
 	mic.Cycle(); // IRETURN2
 	mic.Cycle(); // IRETURN3
 	mic.Cycle(); // IRETURN4
-	mic.Cycle(); // IRETURN5
+	mic.Cycle(); // IRETURN5 (PC = savedPC: jump + refill)
 	mic.Cycle(); // IRETURN6
 	mic.Cycle(); // IRETURN7
-	mic.Cycle(); // IRETURN8
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // IRETURN8 (fused dispatch: the queue front is already
+	             // the return target's opcode)
+	mic.Cycle(); // BIPUSH1 (delivers IRETURN8's pending write)
 
-	
 	auto output = memory.GetData(5);
 	auto retval = output[output.size() - 1];
 	CHECK(retval == data[13]);
 
 	auto regs = mic.GetRegisters();
-	CHECK(regs.sp == memory.GetDataSegmentAddress() + 4);
+	// SP = frame base + 1: the return restored SP to the caller frame
+	// and the dispatched bipush has already pushed its operand slot.
+	CHECK(regs.sp == memory.GetDataSegmentAddress() + 5);
+	// PC = one past the return target: the dispatch consumed its opcode.
 	CHECK(regs.pc == 4);
 	CHECK(regs.lv == memory.GetDataSegmentAddress());
-	CHECK(regs.mbr == BIPUSH_ADDR);
 }
 
 TEST_CASE("Program Equal") {
@@ -943,7 +898,7 @@ TEST_CASE("ISHR") {
 
 		mic.Cycle(); // NOP
 		mic.Cycle(); // MAIN
-		mic.Cycle(); // ISHR
+		mic.Cycle(); // ISHR (fused dispatch -> HALT)
 		auto regs = mic.GetRegisters();
 		CHECK(regs.tos == 4);
 	}
@@ -974,12 +929,9 @@ TEST_CASE("ISHR") {
 		mic.SetTOS(1);
 
 		mic.Cycle(); // NOP
-		mic.Cycle(); // MAIN
+		mic.Cycle(); // MAIN (queue front = HALT)
+		CHECK(mic.GetRegisters().mbr == HALT_ADDR);
 		mic.Cycle(); // ISHR
 		CHECK(mic.GetRegisters().tos == 0);
-
-		mic.Cycle(); // MAIN (fetch HALT)
-		auto regs = mic.GetRegisters();
-		CHECK(regs.mbr == HALT_ADDR);
 	}
 }

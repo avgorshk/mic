@@ -4,6 +4,10 @@
 
 constexpr uint32_t IRETURN_ADDR = 0xAC;
 
+// Structure preserved from the pre-IFU flow; only the fetch machinery is
+// replaced: IRETURN5's write to PC now jumps the IFU (flush + refill at
+// the return address), and IRETURN8 fuses the trailing dispatch. The
+// refill lands while IRETURN6-8 run, so the dispatch never stalls.
 class IRETURN1MicroInstruction : public MicroInstruction {
 public:
 	IRETURN1MicroInstruction() {
@@ -46,7 +50,6 @@ public:
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, pc);
 		inst_.mem_rd = 1;
-		inst_.mem_fetch = 1;
 		inst_.next_address = IRETURN_ADDR + 5;
 	}
 };
@@ -75,6 +78,7 @@ public:
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, mdr);
 		inst_.mem_wr = 1;
-		inst_.next_address = MAIN_ADDR;
+		inst_.jmpc = 1;
+		inst_.next_address = 0;
 	}
 };

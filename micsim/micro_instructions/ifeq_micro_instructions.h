@@ -17,6 +17,7 @@ public:
 class IFEQ2MicroInstruction : public MicroInstruction {
 public:
 	IFEQ2MicroInstruction() {
+		// read-latency pad
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, opc);
 		inst_.next_address = IFEQ_ADDR + 2;

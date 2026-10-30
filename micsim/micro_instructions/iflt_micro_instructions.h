@@ -17,6 +17,7 @@ public:
 class IFLT2MicroInstruction : public MicroInstruction {
 public:
 	IFLT2MicroInstruction() {
+		// read-latency pad
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, opc);
 		inst_.next_address = IFLT_ADDR + 2;

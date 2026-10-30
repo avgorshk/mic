@@ -16,19 +16,13 @@ public:
 class BIPUSH2MicroInstruction : public MicroInstruction {
 public:
 	BIPUSH2MicroInstruction() {
-		ALU_INC_B(inst_);
-		REG_ASSIGN(inst_, PC, pc);
-		inst_.mem_fetch = 1;
-		inst_.next_address = BIPUSH_ADDR + 2;
-	}
-};
-
-class BIPUSH3MicroInstruction : public MicroInstruction {
-public:
-	BIPUSH3MicroInstruction() {
+		// The operand is already at the queue front: sign-extend it,
+		// push it, and dispatch. The A-bus read consumes the operand,
+		// then the dispatch snapshot sees the next opcode.
 		ALU_PASS_A(inst_);
 		REG_ASSIGN2_A(inst_, MBR_SIGNED, tos, mdr);
 		inst_.mem_wr = 1;
-		inst_.next_address = MAIN_ADDR;
+		inst_.jmpc = 1;
+		inst_.next_address = 0;
 	}
 };

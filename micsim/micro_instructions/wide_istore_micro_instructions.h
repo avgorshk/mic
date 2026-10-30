@@ -7,9 +7,9 @@ constexpr uint32_t WIDE_ISTORE_ADDR = (ISTORE_ADDR | 0x100);
 class WIDE_ISTORE1MicroInstruction : public MicroInstruction {
 public:
 	WIDE_ISTORE1MicroInstruction() {
-		ALU_INC_B(inst_);
-		REG_ASSIGN(inst_, PC, pc);
-		inst_.mem_fetch = 1;
+		ALU_ADD(inst_);
+		REG_READ_A(inst_, MBR2_UNSIGNED);
+		REG_ASSIGN(inst_, LV, mar);
 		inst_.next_address = WIDE_ISTORE_ADDR + 1;
 	}
 };
@@ -17,8 +17,9 @@ public:
 class WIDE_ISTORE2MicroInstruction : public MicroInstruction {
 public:
 	WIDE_ISTORE2MicroInstruction() {
-		ALU_SLL8_A(inst_);
-		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
+		ALU_PASS_B(inst_);
+		REG_ASSIGN(inst_, TOS, mdr);
+		inst_.mem_wr = 1;
 		inst_.next_address = WIDE_ISTORE_ADDR + 2;
 	}
 };
@@ -26,9 +27,9 @@ public:
 class WIDE_ISTORE3MicroInstruction : public MicroInstruction {
 public:
 	WIDE_ISTORE3MicroInstruction() {
-		ALU_OR(inst_);
-		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
-		REG_READ(inst_, H);
+		ALU_DEC_B(inst_);
+		REG_ASSIGN2(inst_, SP, mar, sp);
+		inst_.mem_rd = 1;
 		inst_.next_address = WIDE_ISTORE_ADDR + 3;
 	}
 };
@@ -36,22 +37,17 @@ public:
 class WIDE_ISTORE4MicroInstruction : public MicroInstruction {
 public:
 	WIDE_ISTORE4MicroInstruction() {
-		ALU_ADD(inst_);
-		REG_ASSIGN(inst_, LV, mar);
-		inst_.mem_rd = 1;
+		// pop-read latency pad
 		inst_.next_address = WIDE_ISTORE_ADDR + 4;
 	}
 };
 
-// The next-opcode fetch: wide_istore's index is 2 bytes, so the shared
-// ISTORE tail's fetch (PC+1) targets the next instruction's operand --
-// the opcode itself must be fetched here.
 class WIDE_ISTORE5MicroInstruction : public MicroInstruction {
 public:
 	WIDE_ISTORE5MicroInstruction() {
-		ALU_INC_B(inst_);
-		REG_ASSIGN(inst_, PC, pc);
-		inst_.mem_fetch = 1;
-		inst_.next_address = ISTORE_ADDR + 2;
+		ALU_PASS_B(inst_);
+		REG_ASSIGN(inst_, MDR, tos);
+		inst_.jmpc = 1;
+		inst_.next_address = 0;
 	}
 };

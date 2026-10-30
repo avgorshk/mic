@@ -7,6 +7,8 @@ constexpr uint32_t GOTO_ADDR = 0xA6;
 class GOTO1MicroInstruction : public MicroInstruction {
 public:
 	GOTO1MicroInstruction() {
+		// The IFU's PC is the address of the byte at the queue front
+		// (the first offset byte), so PC - 1 is the goto's own address.
 		ALU_DEC_B(inst_);
 		REG_ASSIGN(inst_, PC, opc);
 		inst_.next_address = GOTO_ADDR + 1;
@@ -16,45 +18,13 @@ public:
 class GOTO2MicroInstruction : public MicroInstruction {
 public:
 	GOTO2MicroInstruction() {
-		ALU_INC_B(inst_);
-		REG_ASSIGN(inst_, PC, pc);
-		inst_.mem_fetch = 1;
-		inst_.next_address = GOTO_ADDR + 2;
-	}
-};
-
-class GOTO3MicroInstruction : public MicroInstruction {
-public:
-	GOTO3MicroInstruction() {
-		ALU_SLL8_A(inst_);
-		REG_ASSIGN_A(inst_, MBR_SIGNED, h);
-		inst_.next_address = GOTO_ADDR + 3;
-	}
-};
-
-class GOTO4MicroInstruction : public MicroInstruction {
-public:
-	GOTO4MicroInstruction() {
-		ALU_OR(inst_);
-		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
-		REG_READ(inst_, H);
-		inst_.next_address = GOTO_ADDR + 4;
-	}
-};
-
-class GOTO5MicroInstruction : public MicroInstruction {
-public:
-	GOTO5MicroInstruction() {
+		// Target = OPC + sign-extended 16-bit offset; the MBR2 read
+		// consumes the offset, then write_pc flushes the queue and
+		// refills from the target. The trailing MAIN stalls until the
+		// first target block lands and dispatches it.
 		ALU_ADD(inst_);
+		REG_READ_A(inst_, MBR2_SIGNED);
 		REG_ASSIGN(inst_, OPC, pc);
-		inst_.mem_fetch = 1;
-		inst_.next_address = GOTO_ADDR + 5;
-	}
-};
-
-class GOTO6MicroInstruction : public MicroInstruction {
-public:
-	GOTO6MicroInstruction() {
 		inst_.next_address = MAIN_ADDR;
 	}
 };

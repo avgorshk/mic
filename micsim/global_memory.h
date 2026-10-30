@@ -15,7 +15,10 @@ public:
 		: program_segment_size_(program_segment_size),
 		  constant_segment_size_(constant_segment_size),
 		  data_segment_size_(data_segment_size) {
-		memory_.resize(GetSize());
+		// +8 bytes of slack so the IFU's last 4-byte block read (which
+		// may start at any byte address and extend past the program)
+		// never leaves the physical storage.
+		memory_.resize(GetSize() + 8);
 	}
 
 public:
@@ -87,6 +90,27 @@ public:
 		return mbr;
 	}
 
+	// 4-byte block fetch for the instruction fetch unit: same issue/deliver
+	// latency model (issue at edge N, delivered at edge N+1). Always reads
+	// the full 4 bytes -- a final block may extend past the program into
+	// the other segments; only the total-memory bound is guarded.
+	void FetchBlock(uint8_t is_fetch, uint32_t imar,
+			uint8_t& is_written, uint32_t& block) {
+		block = 0;
+		is_written = 0;
+		if (is_fetch_block_) {
+			assert(fetch_block_addr_ + 4 <= memory_.size());
+			memcpy(&block, memory_.data() + fetch_block_addr_, 4);
+			is_written = 1;
+			is_fetch_block_ = 0;
+		}
+		if (is_fetch) {
+			is_fetch_block_ = 1;
+			assert(imar + 4 <= memory_.size());
+			fetch_block_addr_ = imar;
+		}
+	}
+
 	uint32_t Read(uint8_t is_read, uint32_t mar, uint8_t& is_written) {
 		uint32_t mdr = 0;
 		is_written = 0;
@@ -128,6 +152,8 @@ private:
 
 	uint8_t is_fetch_ = 0;
 	uint32_t fetch_pc_ = 0;
+	uint8_t is_fetch_block_ = 0;
+	uint32_t fetch_block_addr_ = 0;
 	uint8_t is_read_ = 0;
 	uint32_t read_addr_ = 0;
 	uint8_t is_write_ = 0;

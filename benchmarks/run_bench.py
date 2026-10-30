@@ -87,13 +87,18 @@ def run_one(name, relpath, extra_args, expected):
         return {'name': name, 'cycles': None,
                 'result': 'FAIL (no cycle count)'}, program
     cycles = int(m.group(1))
+    stalls = None
+    ms = re.search(r'stall:\s*(\d+)', proc.stdout)
+    if ms:
+        stalls = int(ms.group(1))
     with open(out_path, 'rb') as f:
         word0 = struct.unpack('<I', f.read(4))[0]
     if word0 != expected:
         return {'name': name, 'cycles': cycles,
                 'result': 'FAIL (word0=%u, expected %u)'
                 % (word0, expected)}, program
-    return {'name': name, 'cycles': cycles, 'result': 'ok'}, program
+    return {'name': name, 'cycles': cycles, 'stalls': stalls,
+            'result': 'ok'}, program
 
 
 def main():
@@ -107,14 +112,18 @@ def main():
         if row['result'] != 'ok':
             failed = True
 
-    print('name         cycles       result')
+    print('name         cycles       stalls      result')
     for row in rows:
-        print('%-12s %-12s %s'
-              % (row['name'], row['cycles'], row['result']))
+        print('%-12s %-12s %-11s %s'
+              % (row['name'], row['cycles'],
+                 row['stalls'] if row['stalls'] is not None else '-',
+                 row['result']))
     total_micro = sum(r['cycles'] for r in rows[:len(MICRO)])
     total_all = sum(r['cycles'] for r in rows)
+    total_stalls = sum(r['stalls'] for r in rows if r['stalls'])
     print('TOTAL (micro) %d' % total_micro)
     print('TOTAL (all)   %d' % total_all)
+    print('TOTAL (stall) %d' % total_stalls)
 
     missing = [name for name, byte in COVERAGE.items()
                if all_bytes.count(byte) == 0]

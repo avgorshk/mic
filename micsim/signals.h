@@ -26,8 +26,7 @@ struct Signals {
 	// B Bus (3): source for the ALU B input (8 variants)
 	uint8_t b_read : 3;
 
-	// Memory Signals (3)
+	// Memory Signals (2)
 	uint8_t mem_rd : 1;
 	uint8_t mem_wr : 1;
-	uint8_t mem_fetch : 1;
 };

@@ -7,9 +7,12 @@ constexpr uint32_t WIDE_ILOAD_ADDR = (ILOAD_ADDR | 0x100);
 class WIDE_ILOAD1MicroInstruction : public MicroInstruction {
 public:
 	WIDE_ILOAD1MicroInstruction() {
-		ALU_INC_B(inst_);
-		REG_ASSIGN(inst_, PC, pc);
-		inst_.mem_fetch = 1;
+		// The 2-byte index is at the queue front; the MBR2 read
+		// consumes it. MAR = LV + index in one cycle.
+		ALU_ADD(inst_);
+		REG_READ_A(inst_, MBR2_UNSIGNED);
+		REG_ASSIGN(inst_, LV, mar);
+		inst_.mem_rd = 1;
 		inst_.next_address = WIDE_ILOAD_ADDR + 1;
 	}
 };
@@ -17,8 +20,8 @@ public:
 class WIDE_ILOAD2MicroInstruction : public MicroInstruction {
 public:
 	WIDE_ILOAD2MicroInstruction() {
-		ALU_SLL8_A(inst_);
-		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
+		ALU_INC_B(inst_);
+		REG_ASSIGN2(inst_, SP, mar, sp);
 		inst_.next_address = WIDE_ILOAD_ADDR + 2;
 	}
 };
@@ -26,9 +29,7 @@ public:
 class WIDE_ILOAD3MicroInstruction : public MicroInstruction {
 public:
 	WIDE_ILOAD3MicroInstruction() {
-		ALU_OR(inst_);
-		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
-		REG_READ(inst_, H);
+		inst_.mem_wr = 1;
 		inst_.next_address = WIDE_ILOAD_ADDR + 3;
 	}
 };
@@ -36,22 +37,9 @@ public:
 class WIDE_ILOAD4MicroInstruction : public MicroInstruction {
 public:
 	WIDE_ILOAD4MicroInstruction() {
-		ALU_ADD(inst_);
-		REG_ASSIGN(inst_, LV, mar);
-		inst_.mem_rd = 1;
-		inst_.next_address = WIDE_ILOAD_ADDR + 4;
-	}
-};
-
-// The next-opcode fetch: wide_iload's index is 2 bytes, so the shared
-// ILOAD tail's fetch (PC+1) targets the next instruction's operand --
-// the opcode itself must be fetched here.
-class WIDE_ILOAD5MicroInstruction : public MicroInstruction {
-public:
-	WIDE_ILOAD5MicroInstruction() {
-		ALU_INC_B(inst_);
-		REG_ASSIGN(inst_, PC, pc);
-		inst_.mem_fetch = 1;
-		inst_.next_address = ILOAD_ADDR + 2;
+		ALU_PASS_B(inst_);
+		REG_ASSIGN(inst_, MDR, tos);
+		inst_.jmpc = 1;
+		inst_.next_address = 0;
 	}
 };

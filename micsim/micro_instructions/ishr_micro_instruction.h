@@ -5,7 +5,6 @@
 constexpr uint32_t ISHR_ADDR = 0x1C;
 
 // ishr: TOS = TOS >> 1 (arithmetic shift right).
-// Uses the ALU's sra1 function, which no other micro-routine uses.
 class ISHRMicroInstruction : public MicroInstruction {
 public:
 	ISHRMicroInstruction() {
@@ -15,6 +14,7 @@ public:
 		alu.sra1 = 1;  // result >>= 1 with sign fill
 		inst_.alu = alu;
 		REG_ASSIGN(inst_, TOS, tos);
-		inst_.next_address = MAIN_ADDR;
+		inst_.jmpc = 1;
+		inst_.next_address = 0;
 	}
 };

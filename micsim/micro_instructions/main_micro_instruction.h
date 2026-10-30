@@ -4,12 +4,13 @@
 
 constexpr uint32_t MAIN_ADDR = 0x100;
 
+// MAIN is now a pure dispatch: the IFU's queue front holds the opcode
+// (its predecessor fetched it in the background), JMPC consumes it and
+// the queue advances -- the routine's first cycle sees the first
+// operand with no latency and no bookkeeping.
 class MAINMicroInstruction : public MicroInstruction {
 public:
 	MAINMicroInstruction() {
-		ALU_INC_B(inst_);
-		REG_ASSIGN(inst_, PC, pc);
 		inst_.jmpc = 1;
-		inst_.mem_fetch = 1;
 	}
 };

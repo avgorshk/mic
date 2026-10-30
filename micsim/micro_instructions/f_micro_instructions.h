@@ -7,8 +7,9 @@ constexpr uint32_t F_ADDR = 0xF0;
 class F1MicroInstruction : public MicroInstruction {
 public:
 	F1MicroInstruction() {
-		ALU_INC_B(inst_);
-		REG_ASSIGN(inst_, PC, pc);
+		// Not-taken branch: discard the 2-byte offset. The MBR2 read
+		// consumes it; the next opcode is already behind it.
+		REG_READ_A(inst_, MBR2_UNSIGNED);
 		inst_.next_address = F_ADDR + 1;
 	}
 };
@@ -16,16 +17,7 @@ public:
 class F2MicroInstruction : public MicroInstruction {
 public:
 	F2MicroInstruction() {
-		ALU_INC_B(inst_);
-		REG_ASSIGN(inst_, PC, pc);
-		inst_.mem_fetch = 1;
-		inst_.next_address = F_ADDR + 2;
-	}
-};
-
-class F3MicroInstruction : public MicroInstruction {
-public:
-	F3MicroInstruction() {
-		inst_.next_address = MAIN_ADDR;
+		inst_.jmpc = 1;
+		inst_.next_address = 0;
 	}
 };

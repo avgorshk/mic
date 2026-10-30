@@ -11,29 +11,24 @@ class ControlMemory {
 public:
 	ControlMemory() : memory_(CONTROL_MEMORY_SIZE) {
 		memory_[NOP_ADDR] = NOPMicroInstruction();
-		
+
 		memory_[BIPUSH_ADDR] = BIPUSH1MicroInstruction();
 		memory_[BIPUSH_ADDR + 1] = BIPUSH2MicroInstruction();
-		memory_[BIPUSH_ADDR + 2] = BIPUSH3MicroInstruction();
 
 		memory_[LDC_W_ADDR] = LDC_W1MicroInstruction();
 		memory_[LDC_W_ADDR + 1] = LDC_W2MicroInstruction();
 		memory_[LDC_W_ADDR + 2] = LDC_W3MicroInstruction();
-		memory_[LDC_W_ADDR + 3] = LDC_W4MicroInstruction();
-		memory_[LDC_W5_ADDR] = LDC_W5MicroInstruction();
 
 		memory_[ILOAD_ADDR] = ILOAD1MicroInstruction();
 		memory_[ILOAD_ADDR + 1] = ILOAD2MicroInstruction();
 		memory_[ILOAD_ADDR + 2] = ILOAD3MicroInstruction();
 		memory_[ILOAD_ADDR + 3] = ILOAD4MicroInstruction();
-		memory_[ILOAD_ADDR + 4] = ILOAD5MicroInstruction();
 
 		memory_[ISTORE_ADDR] = ISTORE1MicroInstruction();
 		memory_[ISTORE_ADDR + 1] = ISTORE2MicroInstruction();
 		memory_[ISTORE_ADDR + 2] = ISTORE3MicroInstruction();
 		memory_[ISTORE_ADDR + 3] = ISTORE4MicroInstruction();
 		memory_[ISTORE_ADDR + 4] = ISTORE5MicroInstruction();
-		memory_[ISTORE_ADDR + 5] = ISTORE6MicroInstruction();
 
 		memory_[POP_ADDR] = POP1MicroInstruction();
 		memory_[POP_ADDR + 1] = POP2MicroInstruction();
@@ -68,8 +63,6 @@ public:
 		memory_[IINC_ADDR] = IINC1MicroInstruction();
 		memory_[IINC_ADDR + 1] = IINC2MicroInstruction();
 		memory_[IINC_ADDR + 2] = IINC3MicroInstruction();
-		memory_[IINC_ADDR + 3] = IINC4MicroInstruction();
-		memory_[IINC_ADDR + 4] = IINC5MicroInstruction();
 
 		memory_[IFEQ_ADDR] = IFEQ1MicroInstruction();
 		memory_[IFEQ_ADDR + 1] = IFEQ2MicroInstruction();
@@ -90,10 +83,6 @@ public:
 
 		memory_[GOTO_ADDR] = GOTO1MicroInstruction();
 		memory_[GOTO_ADDR + 1] = GOTO2MicroInstruction();
-		memory_[GOTO_ADDR + 2] = GOTO3MicroInstruction();
-		memory_[GOTO_ADDR + 3] = GOTO4MicroInstruction();
-		memory_[GOTO_ADDR + 4] = GOTO5MicroInstruction();
-		memory_[GOTO_ADDR + 5] = GOTO6MicroInstruction();
 
 		memory_[IRETURN_ADDR] = IRETURN1MicroInstruction();
 		memory_[IRETURN_ADDR + 1] = IRETURN2MicroInstruction();
@@ -122,19 +111,11 @@ public:
 		memory_[INVOKEVIRTUAL_ADDR + 13] = INVOKEVIRTUAL14MicroInstruction();
 		memory_[INVOKEVIRTUAL_ADDR + 14] = INVOKEVIRTUAL15MicroInstruction();
 		memory_[INVOKEVIRTUAL_ADDR + 15] = INVOKEVIRTUAL16MicroInstruction();
-		memory_[INVOKEVIRTUAL_ADDR + 16] = INVOKEVIRTUAL17MicroInstruction();
-		memory_[INVOKEVIRTUAL_ADDR + 17] = INVOKEVIRTUAL18MicroInstruction();
-		memory_[INVOKEVIRTUAL_ADDR + 18] = INVOKEVIRTUAL19MicroInstruction();
-		memory_[INVOKEVIRTUAL_ADDR + 19] = INVOKEVIRTUAL20MicroInstruction();
-		memory_[INVOKEVIRTUAL_ADDR + 20] = INVOKEVIRTUAL21MicroInstruction();
-		memory_[INVOKEVIRTUAL_ADDR + 21] = INVOKEVIRTUAL22MicroInstruction();
 
-		memory_[WIDE_ADDR] = WIDE1MicroInstruction();
-		memory_[WIDE_ADDR + 1] = WIDE2MicroInstruction();
+		memory_[WIDE_ADDR] = WIDE2MicroInstruction();
 
 		memory_[F_ADDR] = F1MicroInstruction();
 		memory_[F_ADDR + 1] = F2MicroInstruction();
-		memory_[F_ADDR + 2] = F3MicroInstruction();
 
 		memory_[HALT_ADDR] = HALTMicroInstruction();
 		memory_[MAIN_ADDR] = MAINMicroInstruction();
@@ -143,7 +124,6 @@ public:
 		memory_[WIDE_ILOAD_ADDR + 1] = WIDE_ILOAD2MicroInstruction();
 		memory_[WIDE_ILOAD_ADDR + 2] = WIDE_ILOAD3MicroInstruction();
 		memory_[WIDE_ILOAD_ADDR + 3] = WIDE_ILOAD4MicroInstruction();
-		memory_[WIDE_ILOAD_ADDR + 4] = WIDE_ILOAD5MicroInstruction();
 
 		memory_[WIDE_ISTORE_ADDR] = WIDE_ISTORE1MicroInstruction();
 		memory_[WIDE_ISTORE_ADDR + 1] = WIDE_ISTORE2MicroInstruction();

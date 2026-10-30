@@ -5,7 +5,7 @@
 
 constexpr uint16_t HALT_SIGNAL = 0xFE;
 
-// A bus: 9 sources. H = 0 so a pre-rework MIR (a_read = 0) keeps its
+// A bus: 11 sources. H = 0 so a pre-rework MIR (a_read = 0) keeps its
 // exact old behavior (A was always H).
 enum MicroInstructionARead {
 	AREAD_H = 0,
@@ -16,7 +16,9 @@ enum MicroInstructionARead {
 	AREAD_LV = 5,
 	AREAD_CPP = 6,
 	AREAD_TOS = 7,
-	AREAD_OPC = 8
+	AREAD_OPC = 8,
+	AREAD_MBR2_SIGNED = 9,
+	AREAD_MBR2_UNSIGNED = 10
 };
 
 // B bus: 8 sources. MBR is readable via the A bus only.
@@ -54,10 +56,9 @@ struct MicroInstructionEncoding {
 	uint8_t write_opc : 1;
 	uint8_t write_h : 1;
 
-	// Mem (3)
+	// Mem (2): the IFU refills itself; instructions no longer fetch.
 	uint8_t mem_rd : 1;
 	uint8_t mem_wr : 1;
-	uint8_t mem_fetch : 1;
 
 	// A Bus (4), B Bus (3)
 	uint8_t a_read : 4;
@@ -84,15 +85,14 @@ public:
 		signals.write_h = inst_.write_h;
 
 		// Bus Read Signals (A: 4 bits, B: 3 bits)
-		assert(inst_.a_read <= 8);
+		assert(inst_.a_read <= 10);
 		assert(inst_.b_read <= 7);
 		signals.a_read = inst_.a_read;
 		signals.b_read = inst_.b_read;
 
-		// Memory Signals (3)
+		// Memory Signals (2)
 		signals.mem_rd = inst_.mem_rd;
 		signals.mem_wr = inst_.mem_wr;
-		signals.mem_fetch = inst_.mem_fetch;
 
 		return signals;
 	}

@@ -228,6 +228,7 @@ int main(int argc, char* argv[]) {
     auto output = memory.GetData(data_segment_elementes);
     WriteBinary(output_file, output);
 
-    std::cout << "Cycles completed: " << cycle_count << std::endl;
+    std::cout << "Cycles completed: " << cycle_count
+              << " (stall: " << mic.GetStallCycles() << ")" << std::endl;
     std::cout << "Output written: " << output_file << std::endl;
 }
