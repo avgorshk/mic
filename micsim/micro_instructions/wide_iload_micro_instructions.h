@@ -39,6 +39,19 @@ public:
 		ALU_ADD(inst_);
 		REG_ASSIGN(inst_, LV, mar);
 		inst_.mem_rd = 1;
+		inst_.next_address = WIDE_ILOAD_ADDR + 4;
+	}
+};
+
+// The next-opcode fetch: wide_iload's index is 2 bytes, so the shared
+// ILOAD tail's fetch (PC+1) targets the next instruction's operand --
+// the opcode itself must be fetched here.
+class WIDE_ILOAD5MicroInstruction : public MicroInstruction {
+public:
+	WIDE_ILOAD5MicroInstruction() {
+		ALU_INC_B(inst_);
+		REG_ASSIGN(inst_, PC, pc);
+		inst_.mem_fetch = 1;
 		inst_.next_address = ILOAD_ADDR + 2;
 	}
 };

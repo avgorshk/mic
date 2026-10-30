@@ -39,6 +39,19 @@ public:
 		ALU_ADD(inst_);
 		REG_ASSIGN(inst_, LV, mar);
 		inst_.mem_rd = 1;
+		inst_.next_address = WIDE_ISTORE_ADDR + 4;
+	}
+};
+
+// The next-opcode fetch: wide_istore's index is 2 bytes, so the shared
+// ISTORE tail's fetch (PC+1) targets the next instruction's operand --
+// the opcode itself must be fetched here.
+class WIDE_ISTORE5MicroInstruction : public MicroInstruction {
+public:
+	WIDE_ISTORE5MicroInstruction() {
+		ALU_INC_B(inst_);
+		REG_ASSIGN(inst_, PC, pc);
+		inst_.mem_fetch = 1;
 		inst_.next_address = ISTORE_ADDR + 2;
 	}
 };

@@ -20,6 +20,7 @@ public:
 		memory_[LDC_W_ADDR + 1] = LDC_W2MicroInstruction();
 		memory_[LDC_W_ADDR + 2] = LDC_W3MicroInstruction();
 		memory_[LDC_W_ADDR + 3] = LDC_W4MicroInstruction();
+		memory_[LDC_W5_ADDR] = LDC_W5MicroInstruction();
 
 		memory_[ILOAD_ADDR] = ILOAD1MicroInstruction();
 		memory_[ILOAD_ADDR + 1] = ILOAD2MicroInstruction();
@@ -69,7 +70,6 @@ public:
 		memory_[IINC_ADDR + 2] = IINC3MicroInstruction();
 		memory_[IINC_ADDR + 3] = IINC4MicroInstruction();
 		memory_[IINC_ADDR + 4] = IINC5MicroInstruction();
-		memory_[IINC_ADDR + 5] = IINC6MicroInstruction();
 
 		memory_[IFEQ_ADDR] = IFEQ1MicroInstruction();
 		memory_[IFEQ_ADDR + 1] = IFEQ2MicroInstruction();
@@ -143,16 +143,22 @@ public:
 		memory_[WIDE_ILOAD_ADDR + 1] = WIDE_ILOAD2MicroInstruction();
 		memory_[WIDE_ILOAD_ADDR + 2] = WIDE_ILOAD3MicroInstruction();
 		memory_[WIDE_ILOAD_ADDR + 3] = WIDE_ILOAD4MicroInstruction();
+		memory_[WIDE_ILOAD_ADDR + 4] = WIDE_ILOAD5MicroInstruction();
 
 		memory_[WIDE_ISTORE_ADDR] = WIDE_ISTORE1MicroInstruction();
 		memory_[WIDE_ISTORE_ADDR + 1] = WIDE_ISTORE2MicroInstruction();
 		memory_[WIDE_ISTORE_ADDR + 2] = WIDE_ISTORE3MicroInstruction();
 		memory_[WIDE_ISTORE_ADDR + 3] = WIDE_ISTORE4MicroInstruction();
+		memory_[WIDE_ISTORE_ADDR + 4] = WIDE_ISTORE5MicroInstruction();
 
 		memory_[T_ADDR] = TMicroInstruction();
 	}
 
 public:
+	uint32_t GetMPC() const {
+		return mpc_;
+	}
+
 	MicroInstruction LoadMIR() {
 		assert(mpc_ < CONTROL_MEMORY_SIZE);
 		mir_ = memory_[mpc_];

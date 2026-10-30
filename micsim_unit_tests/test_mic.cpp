@@ -13,7 +13,7 @@ TEST_CASE("Signals Size") {
 }
 
 TEST_CASE("ILOAD") {
-	std::vector<uint8_t> program = { ILOAD_ADDR, 0x2 };
+	std::vector<uint8_t> program = { ILOAD_ADDR, 0x2, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -43,7 +43,8 @@ TEST_CASE("ILOAD") {
 }
 
 TEST_CASE("WIDE_ILOAD") {
-	std::vector<uint8_t> program = { WIDE_ADDR, ILOAD_ADDR, 0x0, 0x2 };
+	std::vector<uint8_t> program = { WIDE_ADDR, ILOAD_ADDR, 0x0, 0x2,
+		HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -62,6 +63,7 @@ TEST_CASE("WIDE_ILOAD") {
 	mic.Cycle(); // WIDE_ILOAD2
 	mic.Cycle(); // WIDE_ILOAD3
 	mic.Cycle(); // WIDE_ILOAD4
+	mic.Cycle(); // WIDE_ILOAD5 (next-opcode fetch)
 	mic.Cycle(); // ILOAD3
 	mic.Cycle(); // ILOAD4
 	mic.Cycle(); // ILOAD5
@@ -77,7 +79,7 @@ TEST_CASE("WIDE_ILOAD") {
 }
 
 TEST_CASE("IADD") {
-	std::vector<uint8_t> program = { IADD_ADDR };
+	std::vector<uint8_t> program = { IADD_ADDR, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 20, 30 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -94,12 +96,12 @@ TEST_CASE("IADD") {
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // IADD1
 	mic.Cycle(); // IADD2
-	mic.Cycle(); // IADD3
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // IADD3 (fused dispatch -> HALT)
+	mic.Cycle(); // HALT1
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
-	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.pc == program.size());
 	CHECK(regs.tos == data[sp - 1] + data[sp]);
 
 	auto output = memory.GetData(data.size());
@@ -107,7 +109,7 @@ TEST_CASE("IADD") {
 }
 
 TEST_CASE("ISUB") {
-	std::vector<uint8_t> program = { ISUB_ADDR };
+	std::vector<uint8_t> program = { ISUB_ADDR, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 20, 30 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -124,12 +126,12 @@ TEST_CASE("ISUB") {
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // ISUB1
 	mic.Cycle(); // ISUB2
-	mic.Cycle(); // ISUB3
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // ISUB3 (fused dispatch -> HALT)
+	mic.Cycle(); // HALT1
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
-	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.pc == program.size());
 	CHECK(regs.tos == data[sp - 1] - data[sp]);
 
 	auto output = memory.GetData(data.size());
@@ -137,7 +139,7 @@ TEST_CASE("ISUB") {
 }
 
 TEST_CASE("IAND") {
-	std::vector<uint8_t> program = { IAND_ADDR };
+	std::vector<uint8_t> program = { IAND_ADDR, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 20, 30 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -154,12 +156,12 @@ TEST_CASE("IAND") {
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // ISUB1
 	mic.Cycle(); // ISUB2
-	mic.Cycle(); // ISUB3
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // IAND3 (fused dispatch -> HALT)
+	mic.Cycle(); // HALT1
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
-	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.pc == program.size());
 	CHECK(regs.tos == (data[sp - 1] & data[sp]));
 
 	auto output = memory.GetData(data.size());
@@ -167,7 +169,7 @@ TEST_CASE("IAND") {
 }
 
 TEST_CASE("IOR") {
-	std::vector<uint8_t> program = { IOR_ADDR };
+	std::vector<uint8_t> program = { IOR_ADDR, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 20, 30 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -184,12 +186,12 @@ TEST_CASE("IOR") {
 	mic.Cycle(); // MAIN
 	mic.Cycle(); // ISUB1
 	mic.Cycle(); // ISUB2
-	mic.Cycle(); // ISUB3
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // IOR3 (fused dispatch -> HALT)
+	mic.Cycle(); // HALT1
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
-	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.pc == program.size());
 	CHECK(regs.tos == (data[sp - 1] | data[sp]));
 
 	auto output = memory.GetData(data.size());
@@ -283,7 +285,7 @@ TEST_CASE("SWAP") {
 }
 
 TEST_CASE("ISTORE") {
-	std::vector<uint8_t> program = { ISTORE_ADDR, 0x1 };
+	std::vector<uint8_t> program = { ISTORE_ADDR, 0x1, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -315,7 +317,8 @@ TEST_CASE("ISTORE") {
 }
 
 TEST_CASE("WIDE_ISTORE") {
-	std::vector<uint8_t> program = { WIDE_ADDR, ISTORE_ADDR, 0x0, 0x1 };
+	std::vector<uint8_t> program = { WIDE_ADDR, ISTORE_ADDR, 0x0, 0x1,
+		HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30, 50 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -336,6 +339,7 @@ TEST_CASE("WIDE_ISTORE") {
 	mic.Cycle(); // WIDE_ISTORE2
 	mic.Cycle(); // WIDE_ISTORE3
 	mic.Cycle(); // WIDE_ISTORE4
+	mic.Cycle(); // WIDE_ISTORE5 (next-opcode fetch)
 	mic.Cycle(); // ISTORE3
 	mic.Cycle(); // ISTORE4
 	mic.Cycle(); // ISTORE5
@@ -471,7 +475,7 @@ TEST_CASE("GOTO") {
 }
 
 TEST_CASE("LDC_W") {
-	std::vector<uint8_t> program = { LDC_W_ADDR, 0x0, 0x1 };
+	std::vector<uint8_t> program = { LDC_W_ADDR, 0x0, 0x1, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30 };
 	std::vector<uint32_t> constants = { 7, 8 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
@@ -491,6 +495,7 @@ TEST_CASE("LDC_W") {
 	mic.Cycle(); // LDC_W2
 	mic.Cycle(); // LDC_W3
 	mic.Cycle(); // LDC_W4
+	mic.Cycle(); // LDC_W5 (next-opcode fetch)
 	mic.Cycle(); // ILOAD3
 	mic.Cycle(); // ILOAD4
 	mic.Cycle(); // ILOAD5
@@ -503,7 +508,7 @@ TEST_CASE("LDC_W") {
 }
 
 TEST_CASE("IINC") {
-	std::vector<uint8_t> program = { IINC_ADDR, 0x1, 0x2 };
+	std::vector<uint8_t> program = { IINC_ADDR, 0x1, 0x2, HALT_ADDR };
 	std::vector<uint32_t> data = { 0, 10, 20, 30 };
 	uint32_t sp = static_cast<uint32_t>(data.size()) - 1;
 
@@ -518,16 +523,14 @@ TEST_CASE("IINC") {
 
 	mic.Cycle(); // NOP
 	mic.Cycle(); // MAIN
-	mic.Cycle(); // IINC1
-	mic.Cycle(); // IINC2
-	mic.Cycle(); // IINC3
-	mic.Cycle(); // IINC4
-	mic.Cycle(); // IINC5
-	mic.Cycle(); // IINC6
-	mic.Cycle(); // MAIN
+	mic.Cycle(); // IINC1 (const fetch)
+	mic.Cycle(); // IINC2 (MAR + read)
+	mic.Cycle(); // IINC3 (next-opcode fetch)
+	mic.Cycle(); // IINC4 (add + write)
+	mic.Cycle(); // IINC5 (fused dispatch -> HALT)
 	auto regs = mic.GetRegisters();
 
-	CHECK(regs.pc == program.size() + 1);
+	CHECK(regs.pc == program.size());
 
 	auto output = memory.GetData(data.size());
 	CHECK(output[program[1]] == data[program[1]] + program[2]);
