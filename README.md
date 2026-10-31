@@ -345,7 +345,7 @@ rows: cycle count x 3).
 | ifu | `fbdcbd4` | 30,646,959 | 60,255 | 30,707,214 | 1.52x | instruction fetch unit (PC + 6-byte queue, 4-byte refills); MAIN removed, NOP is the decode step |
 | pipeline | `b09d658` | 10,215,653 | 9,483,567 | 19,699,220 | 2.37x | 4-stage MIR conveyor with forwarding, fetch gates, dispatch flushes; 1 cycle = 1 micro-clock |
 | 7-stage | `676b4c2` | 9,972,287 | 4,579,965 | 14,552,252 | 3.20x | instruction decoder + MIR queue feed the conveyor; dispatch flushes gone |
-| 7-stage + MDR tap | `TBD` | 9,972,287 | 1,137,602 | 11,109,889 | 4.19x | MDR delivery tap (tap 3): in-flight reads feed the ALU directly, the MDR gate is gone |
+| 7-stage + MDR tap | `79fddcc` | 9,972,287 | 1,137,602 | 11,109,889 | 4.19x | MDR delivery tap (tap 3): in-flight reads feed the ALU directly, the MDR gate is gone |
 
 Busy = cycles where a MIR retired, Empty = the rest (Busy + Empty ==
 all, exactly). The pre-pipeline rows are derived (every cycle retired
