@@ -145,7 +145,7 @@ def main():
         total_parts = {}
     print('TOTAL (micro) %d' % total_micro)
     print('TOTAL (all)   %d' % total_all)
-    print('TOTAL (stall) %d' % total_stalls)
+    print('TOTAL (stall events) %d' % total_stalls)
     print('TOTAL (retire) %d' % total_retire)
     if total_parts:
         for k in ('A/B assign cycles', 'ALU cycles', 'C assign cycles',
