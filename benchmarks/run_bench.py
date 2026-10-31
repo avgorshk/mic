@@ -3,10 +3,12 @@
 Run:  python benchmarks/run_bench.py [path/to/micsim.exe]
 
 Compiles, assembles and runs every benchmark on the simulator, verifies
-each result word, and reports time per benchmark in micro-clocks
-(1 simulator cycle = 3 micro-clocks) plus overall totals
-(TOTAL (micro) = the 9 micro-benchmarks, TOTAL (all) = + the 2 realistic
-programs). Also sanity-scans the assembled binaries for opcode coverage.
+each result word, and reports cycles per benchmark (1 simulator cycle =
+1 micro-clock) plus overall totals (TOTAL (micro) = the 9
+micro-benchmarks, TOTAL (all) = + the 2 realistic programs). Busy =
+cycles where the MIR3 slot retired a MIR, Empty = the rest; the
+invariant Busy + Empty == cycles is checked per benchmark and in the
+totals. Also sanity-scans the assembled binaries for opcode coverage.
 
 Exit code 0 when every benchmark produced its expected result and every
 opcode was seen at least once.
@@ -85,34 +87,23 @@ def run_one(name, relpath, extra_args, expected):
                 'result': 'FAIL (micsim exit %d)' % proc.returncode}, program
     m = re.search(r'Cycles completed:\s*(\d+)', proc.stdout)
     if not m:
-        return {'name': name, 'micro_clocks': None,
+        return {'name': name, 'cycles': None,
                 'result': 'FAIL (no cycle count)'}, program
     cycles = int(m.group(1))
-    rm = re.search(r'Retirements:\s*(\d+)', proc.stdout)
-    retirements = int(rm.group(1)) if rm else None
-    pm = {k: re.search(r'%s:\s*(\d+)' % k, proc.stdout) for k in
-          ('A/B assign cycles', 'ALU cycles', 'C assign cycles',
-           'MDR read/write cycles', 'Busy cycles', 'Empty cycles')}
-    parts = {k: int(v.group(1)) for k, v in pm.items() if v}
-    if not parts or parts.get('Busy cycles', 0) + parts.get('Empty cycles', 0) != cycles:
-        return {'name': name, 'micro_clocks': None,
+    bm = re.search(r'Busy cycles \(retirements\):\s*(\d+)', proc.stdout)
+    em = re.search(r'Empty cycles:\s*(\d+)', proc.stdout)
+    busy = int(bm.group(1)) if bm else None
+    empty = int(em.group(1)) if em else None
+    if busy is None or empty is None or busy + empty != cycles:
+        return {'name': name, 'cycles': cycles,
                 'result': 'FAIL (Busy + Empty != cycles)'}, program
-    # Time in micro-clocks: 1 simulator cycle = 3 micro-clocks.
-    mt = re.search(r'Micro-clocks completed:\s*(\d+)\s*\(stall:\s*(\d+)\)',
-                   proc.stdout)
-    if not mt:
-        return {'name': name, 'micro_clocks': None,
-                'result': 'FAIL (no micro-clock count)'}, program
-    micro_clocks = int(mt.group(1))
-    stalls = int(mt.group(2))
     with open(out_path, 'rb') as f:
         word0 = struct.unpack('<I', f.read(4))[0]
     if word0 != expected:
-        return {'name': name, 'micro_clocks': micro_clocks,
+        return {'name': name, 'cycles': cycles,
                 'result': 'FAIL (word0=%u, expected %u)'
                 % (word0, expected)}, program
-    return {'name': name, 'micro_clocks': micro_clocks, 'stalls': stalls,
-            'retirements': retirements, 'parts': parts,
+    return {'name': name, 'cycles': cycles, 'busy': busy, 'empty': empty,
             'result': 'ok'}, program
 
 
@@ -127,30 +118,22 @@ def main():
         if row['result'] != 'ok':
             failed = True
 
-    print('name         micro-clocks stall       result')
+    print('name         cycles      busy        empty       result')
     for row in rows:
-        print('%-12s %-12s %-10s %s'
-              % (row['name'], row['micro_clocks'],
-                 row['stalls'] if row['stalls'] is not None else '-',
+        print('%-12s %-11s %-11s %-11s %s'
+              % (row['name'], row['cycles'], row['busy'], row['empty'],
                  row['result']))
-    total_micro = sum(r['micro_clocks'] for r in rows[:len(MICRO)])
-    total_all = sum(r['micro_clocks'] for r in rows)
-    total_stalls = sum(r['stalls'] for r in rows if r['stalls'])
-    total_retire = sum(r['retirements'] for r in rows if r['retirements'])
-    ok_parts = [r['parts'] for r in rows if 'parts' in r and r['parts']]
-    if ok_parts:
-        total_parts = {k: sum(p[k] for p in ok_parts)
-                       for k in ok_parts[0].keys()}
-    else:
-        total_parts = {}
-    print('TOTAL (micro) %d' % total_micro)
-    print('TOTAL (all)   %d' % total_all)
-    print('TOTAL (stall events) %d' % total_stalls)
-    print('TOTAL (retire) %d' % total_retire)
-    if total_parts:
-        for k in ('A/B assign cycles', 'ALU cycles', 'C assign cycles',
-                  'MDR read/write cycles', 'Busy cycles', 'Empty cycles'):
-            print('TOTAL (%s) %d' % (k, total_parts[k]))
+    total_cycles_micro = sum(r['cycles'] for r in rows[:len(MICRO)])
+    total_cycles_all = sum(r['cycles'] for r in rows)
+    total_busy = sum(r['busy'] for r in rows)
+    total_empty = sum(r['empty'] for r in rows)
+    print('TOTAL (micro) %d' % total_cycles_micro)
+    print('TOTAL (all)   %d' % total_cycles_all)
+    print('TOTAL (busy)  %d' % total_busy)
+    print('TOTAL (empty) %d' % total_empty)
+    if total_busy + total_empty != total_cycles_all:
+        failed = True
+        print('INVARIANT FAIL: busy + empty != all cycles')
 
     missing = [name for name, byte in COVERAGE.items()
                if all_bytes.count(byte) == 0]

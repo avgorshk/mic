@@ -10,7 +10,6 @@ public:
 		ALU_DEC_B(inst_);
 		REG_ASSIGN(inst_, SP, mar);
 		inst_.mem_rd = 1;
-		inst_.next_address = SWAP_ADDR + 1;
 	}
 };
 
@@ -21,7 +20,6 @@ public:
 		// is visible from SWAP3.
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, SP, mar);
-		inst_.next_address = SWAP_ADDR + 2;
 	}
 };
 
@@ -31,7 +29,6 @@ public:
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, h);
 		inst_.mem_wr = 1;
-		inst_.next_address = SWAP_ADDR + 3;
 	}
 };
 
@@ -40,7 +37,6 @@ public:
 	SWAP4MicroInstruction() {
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, mdr);
-		inst_.next_address = SWAP_ADDR + 4;
 	}
 };
 
@@ -50,7 +46,6 @@ public:
 		ALU_DEC_B(inst_);
 		REG_ASSIGN(inst_, SP, mar);
 		inst_.mem_wr = 1;
-		inst_.next_address = SWAP_ADDR + 5;
 	}
 };
 
@@ -60,7 +55,6 @@ public:
 		ALU_PASS_A(inst_);
 		REG_READ_A(inst_, H);
 		REG_ASSIGN0(inst_, tos);
-		inst_.jmpc = 1;
-		inst_.next_address = 0;
+		END_MIR(inst_);
 	}
 };

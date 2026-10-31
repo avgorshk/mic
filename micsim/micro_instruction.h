@@ -33,15 +33,14 @@ enum MicroInstructionBRead {
 	BREAD_H = 7
 };
 
+// MIR format of the queue SRAM: 26 datapath bits + 5 control bits.
+// There is no next_address and no JMPC: routines live contiguously in
+// the control memory (the queue's copy stops at the end bit), and every
+// conditional branch is split into a work MIR followed by a dedicated
+// branch MIR (jump bit + JAM flags) whose retirement resolves the
+// branch against the predecessor's N/Z flags carried in the MemRead
+// stage.
 struct MicroInstructionEncoding {
-	// Addr (9)
-	uint16_t next_address : 9;
-
-	// JAM (3)
-	uint8_t jmpc : 1;
-	uint8_t jamn : 1;
-	uint8_t jamz : 1;
-
 	// ALU (8)
 	ALUFunction alu;
 
@@ -63,6 +62,14 @@ struct MicroInstructionEncoding {
 	// A Bus (4), B Bus (3)
 	uint8_t a_read : 4;
 	uint8_t b_read : 3;
+
+	// Control (5)
+	uint8_t end_bit : 1;   // last MIR of a routine: the queue stops copying
+	uint8_t jump_bit : 1;  // branch MIR: the queue stops and waits for the
+	                       // resolution at this MIR's retirement
+	uint8_t jamn : 1;
+	uint8_t jamz : 1;
+	uint8_t halt_bit : 1;
 };
 
 class MicroInstruction {
@@ -97,8 +104,12 @@ public:
 		return signals;
 	}
 
-	uint16_t GetNextAddress() const {
-		return inst_.next_address;
+	bool GetEndBit() const {
+		return inst_.end_bit != 0;
+	}
+
+	bool GetJumpBit() const {
+		return inst_.jump_bit != 0;
 	}
 
 	uint8_t GetJAMN() const {
@@ -109,17 +120,22 @@ public:
 		return inst_.jamz;
 	}
 
-	uint8_t GetJMPC() const {
-		return inst_.jmpc;
-	}
-
 	bool GetHalt() const {
-		return (inst_.next_address == HALT_SIGNAL);
+		return inst_.halt_bit != 0;
 	}
 
 protected:
 	MicroInstructionEncoding inst_ = { 0 };
 };
+
+#define END_MIR(INST) \
+	INST.end_bit = 1;
+
+#define JUMP_MIR(INST) \
+	INST.jump_bit = 1;
+
+#define HALT_MIR(INST) \
+	INST.halt_bit = 1;
 
 #define REG_READ_B(INST, IN) \
 	INST.b_read = BREAD_##IN;

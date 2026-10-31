@@ -228,20 +228,11 @@ int main(int argc, char* argv[]) {
     auto output = memory.GetData(data_segment_elementes);
     WriteBinary(output_file, output);
 
-    std::cout << "Cycles completed: " << cycle_count
-              << " (stall: " << mic.GetStallCycles() << ")" << std::endl;
-    // 1 machine cycle = 1 micro-clock: the conveyor retires one MIR
-    // per cycle, so the two counters coincide.
-    std::cout << "Micro-clocks completed: " << cycle_count
-              << " (stall: " << mic.GetStallCycles() << ")" << std::endl;
-    // Cycles where the S3 slot retired a MIR: the machine's useful work.
-    std::cout << "Retirements: " << mic.GetRetireCycles() << std::endl;
-    // Per-part activity: Busy + Empty == cycle_count, exactly.
-    std::cout << "A/B assign cycles: " << mic.GetLatchCycles() << std::endl;
-    std::cout << "ALU cycles: " << mic.GetAluCycles() << std::endl;
-    std::cout << "C assign cycles: " << mic.GetCAssignCycles() << std::endl;
-    std::cout << "MDR read/write cycles: " << mic.GetMemCycles() << std::endl;
-    std::cout << "Busy cycles: " << mic.GetBusyCycles() << std::endl;
-    std::cout << "Empty cycles: " << mic.GetEmptyCycles() << std::endl;
+    uint64_t busy = mic.GetRetireCycles();
+    std::cout << "Cycles completed: " << cycle_count << std::endl;
+    // Busy = cycles where the MIR3 slot retired a MIR; Empty = the
+    // rest. Busy + Empty == cycle_count, exactly.
+    std::cout << "Busy cycles (retirements): " << busy << std::endl;
+    std::cout << "Empty cycles: " << (cycle_count - busy) << std::endl;
     std::cout << "Output written: " << output_file << std::endl;
 }

@@ -7,10 +7,12 @@ constexpr uint32_t ISTORE_ADDR = 0x36;
 class ISTORE1MicroInstruction : public MicroInstruction {
 public:
 	ISTORE1MicroInstruction() {
+		// The index is behind this instruction's opcode byte (popped by
+		// ISTORE1's retire): MAR = LV + index in one cycle.
 		ALU_ADD(inst_);
 		REG_READ_A(inst_, MBR_UNSIGNED);
 		REG_ASSIGN(inst_, LV, mar);
-		inst_.next_address = ISTORE_ADDR + 1;
+		inst_.mem_rd = 1;
 	}
 };
 
@@ -20,7 +22,6 @@ public:
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, mdr);
 		inst_.mem_wr = 1;
-		inst_.next_address = ISTORE_ADDR + 2;
 	}
 };
 
@@ -30,7 +31,6 @@ public:
 		ALU_DEC_B(inst_);
 		REG_ASSIGN2(inst_, SP, mar, sp);
 		inst_.mem_rd = 1;
-		inst_.next_address = ISTORE_ADDR + 3;
 	}
 };
 
@@ -39,7 +39,6 @@ public:
 	ISTORE4MicroInstruction() {
 		// pop-read latency pad: the word delivers at this cycle's edge
 		// and is visible from ISTORE5.
-		inst_.next_address = ISTORE_ADDR + 4;
 	}
 };
 
@@ -48,7 +47,6 @@ public:
 	ISTORE5MicroInstruction() {
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, tos);
-		inst_.jmpc = 1;
-		inst_.next_address = 0;
+		END_MIR(inst_);
 	}
 };

@@ -10,7 +10,6 @@ public:
 		ALU_DEC_B(inst_);
 		REG_ASSIGN2(inst_, SP, mar, sp);
 		inst_.mem_rd = 1;
-		inst_.next_address = POP_ADDR + 1;
 	}
 };
 
@@ -19,7 +18,6 @@ public:
 	POP2MicroInstruction() {
 		// read-latency pad: the word delivers at this cycle's edge and
 		// is visible from POP3.
-		inst_.next_address = POP_ADDR + 2;
 	}
 };
 
@@ -28,7 +26,6 @@ public:
 	POP3MicroInstruction() {
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, tos);
-		inst_.jmpc = 1;
-		inst_.next_address = 0;
+		END_MIR(inst_);
 	}
 };

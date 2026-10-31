@@ -9,7 +9,6 @@ public:
 	DUP1MicroInstruction() {
 		ALU_INC_B(inst_);
 		REG_ASSIGN2(inst_, SP, mar, sp);
-		inst_.next_address = DUP_ADDR + 1;
 	}
 };
 
@@ -19,7 +18,6 @@ public:
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, mdr);
 		inst_.mem_wr = 1;
-		inst_.jmpc = 1;
-		inst_.next_address = 0;
+		END_MIR(inst_);
 	}
 };

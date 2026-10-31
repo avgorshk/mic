@@ -4,24 +4,24 @@
 
 constexpr uint32_t IRETURN_ADDR = 0xAC;
 
-// Structure preserved from the pre-IFU flow; only the fetch machinery is
-// replaced: IRETURN5's write to PC now jumps the IFU (flush + refill at
-// the return address), and IRETURN8 fuses the trailing dispatch. The
-// refill lands while IRETURN6-8 run, so the dispatch never stalls.
+// Structure preserved from the pre-IFU flow; only the control machinery
+// changed: IRETURN5's write to PC jumps the IFU (flush + refill at the
+// return address, the decoder resyncs at the landing), and the trailing
+// dispatch is gone -- the queue confirms the resynced decoder after the
+// end bit. The refill lands while IRETURN6-8 run, so no stall is
+// possible.
 class IRETURN1MicroInstruction : public MicroInstruction {
 public:
 	IRETURN1MicroInstruction() {
 		ALU_PASS_B(inst_);
 		REG_ASSIGN2(inst_, LV, mar, sp);
 		inst_.mem_rd = 1;
-		inst_.next_address = IRETURN_ADDR + 1;
 	}
 };
 
 class IRETURN2MicroInstruction : public MicroInstruction {
 public:
 	IRETURN2MicroInstruction() {
-		inst_.next_address = IRETURN_ADDR + 2;
 	}
 };
 
@@ -31,7 +31,6 @@ public:
 		ALU_PASS_B(inst_);
 		REG_ASSIGN2(inst_, MDR, lv, mar);
 		inst_.mem_rd = 1;
-		inst_.next_address = IRETURN_ADDR + 3;
 	}
 };
 
@@ -40,7 +39,6 @@ public:
 	IRETURN4MicroInstruction() {
 		ALU_INC_B(inst_);
 		REG_ASSIGN(inst_, LV, mar);
-		inst_.next_address = IRETURN_ADDR + 4;
 	}
 };
 
@@ -50,7 +48,6 @@ public:
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, pc);
 		inst_.mem_rd = 1;
-		inst_.next_address = IRETURN_ADDR + 5;
 	}
 };
 
@@ -59,7 +56,6 @@ public:
 	IRETURN6MicroInstruction() {
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, SP, mar);
-		inst_.next_address = IRETURN_ADDR + 6;
 	}
 };
 
@@ -68,7 +64,6 @@ public:
 	IRETURN7MicroInstruction() {
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, lv);
-		inst_.next_address = IRETURN_ADDR + 7;
 	}
 };
 
@@ -78,7 +73,6 @@ public:
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, mdr);
 		inst_.mem_wr = 1;
-		inst_.jmpc = 1;
-		inst_.next_address = 0;
+		END_MIR(inst_);
 	}
 };

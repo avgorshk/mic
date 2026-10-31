@@ -7,9 +7,10 @@
 #include <windows.h>
 
 #include "alu.h"
-#include "control_memory.h"
+#include "decoder.h"
 #include "global_memory.h"
 #include "ifu.h"
+#include "instruction_queue.h"
 #include "signals.h"
 
 // The PC and MBR now live inside the InstructionFetchUnit. The Registers
@@ -28,18 +29,20 @@ struct Registers {
 	uint32_t h;
 };
 
-// One 4-stage conveyor slot. Each slot carries its MIR, signals, the
-// microaddress it was fetched from, and the result registers it owns:
-//   a/b   latched at S1, consumed by the ALU at S2
-//   c/n/z ALU result: written back at the MIR's S3 stage-4, carried
-//         through S4 solely as the gap-2 forward source (tap 2)
-//   mar/mdr/rd_pending/wr_pending: memory ops recorded at S3, performed
-//         at S4 (slot-resident: GlobalMemory is synchronous)
+// One 4-slot datapath conveyor slot. Each slot carries its MIR, signals,
+// the opcode-byte pop count of its retire, and the result registers it
+// owns:
+//   a/b   latched at MIR1, consumed by the ALU at MIR2
+//   c/n/z ALU result: written back at the MIR's MIR3 stage-4, carried
+//         through MIR4 solely as the gap-2 forward source (tap 2)
+//   mar/mdr/rd_pending/wr_pending: memory ops recorded at MIR3,
+//         performed at MIR4 (slot-resident: GlobalMemory is
+//         synchronous)
 struct PipelineSlot {
 	bool valid = false;
-	uint32_t addr = 0;
 	MicroInstruction mir;
 	Signals sig{ 0 };
+	uint8_t pop_n = 0;
 	uint32_t a = 0;
 	uint32_t b = 0;
 	uint32_t c = 0;
@@ -51,6 +54,14 @@ struct PipelineSlot {
 	bool wr_pending = false;
 };
 
+// The 7-stage machine: IFU -> Instruction Decoder -> Instruction Queue
+// -> Operands Read (MIR1) -> ALU (MIR2) -> WriteBack (MIR3) -> MemRead
+// (MIR4). The queue -> MIR1 handoff is the single gating point: a MIR
+// is delivered only when its operand bytes are in the byte queue and
+// (for MDR readers) no memory read is in flight. The retire pops the
+// routine's opcode bytes, consumes the operand bytes, resolves split
+// branches, and halts on the halt bit. Busy = retiring cycles, Empty =
+// total - Busy, exactly.
 class MIC {
 public:
 	MIC(GlobalMemory* global_memory) {
@@ -61,11 +72,10 @@ public:
 		regs_.sp = regs_.lv;
 
 		ifu_.Init(global_memory_, global_memory_->GetProgramSegmentAddress());
+		decoder_.Resync(ifu_.GetPC());
+		queue_.Init();
 		regs_.pc = ifu_.GetPC();
 		regs_.mbr = ifu_.Read1();
-
-		// The decode step: NOP at 0x00 dispatches the first opcode.
-		fetch_target_ = 0;
 
 		char trace_env[8] = { 0 };
 		GetEnvironmentVariableA("MIC_TRACE", trace_env, sizeof(trace_env));
@@ -75,61 +85,42 @@ public:
 	}
 
 public:
-	// One machine cycle = one micro-clock: the four slots execute their
-	// stage in parallel, M1 -> M2 -> M3 -> M4 in-cycle.
+	// One machine cycle = one micro-clock: the front-end (decoder +
+	// queue) fills the FIFO, the queue delivers its head into MIR1, and
+	// the four datapath slots execute their stages in parallel,
+	// M1 -> M2 -> M3 -> M4 in-cycle.
 	bool Cycle() {
-		bool l = false;  // A/B assign (the S1 latch ran)
-		bool a = false;  // the ALU ran
-		bool c = false;  // C assign (the S3 writeback at stage 4)
-		bool m = false;  // MDR read delivered / write committed (stage 4)
+		// Stage 0: the front-end fills the FIFO.
+		queue_.Cycle(decoder_, ifu_, control_memory_);
 
-		if (!hold_) {
-			Fetch();
-		} else {
-			hold_ = false;
-		}
-		l = s1_.valid;
+		// Stage 1: the queue -> MIR1 handoff (the single gate point).
+		Fetch();
+
+		// Stages 2-5: the datapath conveyor.
 		LatchS1();
-		a = s2_.valid;
 		ExecuteS2();
-		if (!RetireS3()) {
-			// Wholesale hold: the retire's bytes are not in the queue
-			// (a jump flushed them out from under the in-flight MIRs).
-			// The refill keeps running; nothing else advances; the
-			// stages re-run next cycle (idempotent -- no consumes, no
-			// writes happened).
-			hold_ = true;
-			ifu_.Cycle();
-			++stall_cycles_;
-			CountParts(l, a, false, false);
-			if (trace_) {
-				std::printf(
-					"  retire hold: need=%u q=%u\n",
-					Opsize(s3_.sig) + (s3_.mir.GetJMPC() ? 1 : 0),
-					ifu_.Available());
-			}
-			return halt_;
-		}
-		c = s3_.valid;
-		m = s4_.valid && (s4_.rd_pending || s4_.wr_pending);
+		RetireS3();
 		Stage4();
 		Advance();
-		CountParts(l, a, c, m);
 
 		if (trace_) {
 			std::printf(
-				"cyc S1=%c%03X S2=%c%03X S3=%c%03X S4=%c%03X | "
-				"q=%u idx=%u ft=%03X | sp=%u tos=%u lv=%u mar=%u "
-				"mdr=%u opc=%u h=%u pc=%u mbr=%02X | stall=%llu halt=%d\n",
-				s1_.valid ? 'v' : '-', s1_.addr,
-				s2_.valid ? 'v' : '-', s2_.addr,
-				s3_.valid ? 'v' : '-', s3_.addr,
-				s4_.valid ? 'v' : '-', s4_.addr,
-				ifu_.Available(), fetch_peek_index_, fetch_target_,
+				"cyc M1=%c M2=%c M3=%c M4=%c | fifo=%u q=%u walk=%u "
+				"| sp=%u tos=%u lv=%u mar=%u mdr=%u opc=%u h=%u "
+				"pc=%u mbr=%02X | stall=%llu retire=%llu halt=%d\n",
+				s1_.valid ? 'v' : '-',
+				s2_.valid ? 'v' : '-',
+				s3_.valid ? 'v' : '-',
+				s4_.valid ? 'v' : '-',
+				(unsigned)queue_.GetSize(),
+				ifu_.Available(),
+				decoder_.GetWalk(),
 				regs_.sp, regs_.tos, regs_.lv, regs_.mar,
 				regs_.mdr, regs_.opc, regs_.h,
 				regs_.pc, ifu_.Read1(),
-				(unsigned long long)stall_cycles_, halt_ ? 1 : 0);
+				(unsigned long long)stall_cycles_,
+				(unsigned long long)retire_cycles_,
+				halt_ ? 1 : 0);
 		}
 
 		return halt_;
@@ -151,60 +142,20 @@ public:
 		return regs_;
 	}
 
+	// Delivery-gate events: a cycle where the queue head was held or
+	// the FIFO was empty (debug aid, not part of the accounting).
 	uint64_t GetStallCycles() const {
 		return stall_cycles_;
 	}
 
-	// Cycles where the S3 slot retired a MIR (every MIR of the program
-	// retires exactly once).
+	// Cycles where the MIR3 slot retired a MIR (every MIR of the
+	// program retires exactly once) = the busy cycles.
 	uint64_t GetRetireCycles() const {
 		return retire_cycles_;
 	}
 
-	// Per-part activity: a cycle counts a part when that part performed
-	// its operation (the S1 latch assigned A/B, the ALU ran, the S3
-	// writeback assigned C to the register file, the S4 slot delivered
-	// an MDR read or committed a write). Busy = at least one part ran;
-	// Busy + Empty == total cycles, exactly.
-	uint64_t GetLatchCycles() const {
-		return latch_cycles_;
-	}
-
-	uint64_t GetAluCycles() const {
-		return alu_cycles_;
-	}
-
-	uint64_t GetCAssignCycles() const {
-		return cassign_cycles_;
-	}
-
-	uint64_t GetMemCycles() const {
-		return mem_cycles_;
-	}
-
-	uint64_t GetBusyCycles() const {
-		return busy_cycles_;
-	}
-
-	uint64_t GetEmptyCycles() const {
-		return empty_cycles_;
-	}
-
 private:
 	// ---------------------------------------------------------- helpers
-
-	// Per-cycle part accounting: Busy + Empty == total cycles, exactly.
-	void CountParts(bool l, bool a, bool c, bool m) {
-		if (l) ++latch_cycles_;
-		if (a) ++alu_cycles_;
-		if (c) ++cassign_cycles_;
-		if (m) ++mem_cycles_;
-		if (l || a || c || m) {
-			++busy_cycles_;
-		} else {
-			++empty_cycles_;
-		}
-	}
 
 	// Operand bytes a MIR consumes at its retire (MBR2 reads consume 2).
 	static uint32_t Opsize(const Signals& sig) {
@@ -220,11 +171,10 @@ private:
 		}
 	}
 
-	// Bytes a slot's MIR consumes at its retire: operands + the jmpc
-	// snapshot byte.
+	// Bytes a slot's MIR consumes at its retire: its operands.
 	static uint32_t Need(const PipelineSlot& s) {
 		if (!s.valid) return 0;
-		return Opsize(s.sig) + (s.mir.GetJMPC() ? 1 : 0);
+		return Opsize(s.sig);
 	}
 
 	// True when the ALU actually consumes MDR as an input. Gated on
@@ -267,42 +217,54 @@ private:
 
 	// ------------------------------------------------------------- fetch
 
-	// Stage 0: fetch into S1 along the static next_address chain. The
-	// fetch holds (S1 empty, fetch target unchanged, everything else
-	// advances) when:
-	// (a) the fetched MIR reads MDR while a memory read is in flight
-	//     (the delivery lands at the END of the reader's S4 cycle -- a
-	//     consumer fetched that cycle would latch before it),
-	// (b) the fetched MIR needs operand bytes while a write_pc MIR is
-	//     in flight (the jump flushes the queue out from under the
-	//     latch), or
-	// (c) the IFU queue cannot satisfy the latch's byte needs yet.
+	// Stage 1: deliver the queue head into MIR1. The delivery holds
+	// (MIR1 empty, everything else advances) when:
+	// (a) the head MIR reads MDR while a memory read is in flight (the
+	//     delivery lands at the END of the reader's MIR4 cycle -- a
+	//     consumer delivered that cycle would latch before it), or
+	// (b) the IFU queue cannot satisfy the latch's byte needs yet (the
+	//     post-jump refill race and the decoder's lookahead are both
+	//     handled by this one check).
 	void Fetch() {
 		s1_.valid = false;
 
-		MicroInstruction mir = control_memory_.FetchMIR(fetch_target_);
-		Signals sig = mir.GetSignals();
+		if (!queue_.HasHead()) {
+			++stall_cycles_;
+			return;
+		}
+		QueueEntry head = queue_.PeekHead();
+		Signals sig = head.sig;
 
 		bool mdr_gated = ReadsMdr(sig)
 			&& ((s2_.valid && s2_.sig.mem_rd)
 				|| (s3_.valid && s3_.sig.mem_rd)
 				|| (s4_.valid && s4_.sig.mem_rd));
+
+		// (c) the jump gate: a MIR with operand bytes must not latch
+		// while a write_pc MIR is about to land (its MIR2/MIR3 slot):
+		// the jump flushes the byte queue out from under the latch and
+		// the retire's consumption. After the landing the byte-
+		// availability check covers the refill race.
 		bool jump_gated = Opsize(sig) > 0
 			&& ((s2_.valid && s2_.sig.write_pc)
-				|| (s3_.valid && s3_.sig.write_pc)
-				|| (s4_.valid && s4_.sig.write_pc));
+				|| (s3_.valid && s3_.sig.write_pc));
 
-		// The operand bytes sit behind the older occupants' bytes: those
-		// consumed at this cycle's retire plus next cycle's.
-		fetch_peek_index_ = Need(s3_) + Need(s2_);
+		// The operand bytes sit behind: the head's own un-popped opcode
+		// bytes, the older occupants' un-popped opcode bytes (consumed
+		// at their retires), and the older occupants' yet-unconsumed
+		// operand bytes.
+		peek_index_ = head.pop_n
+			+ (s2_.valid ? s2_.pop_n : 0)
+			+ (s3_.valid ? s3_.pop_n : 0)
+			+ Need(s2_) + Need(s3_);
 		uint32_t opsize = Opsize(sig);
-		bool enough = ifu_.Available() >= fetch_peek_index_ + opsize;
+		bool enough = ifu_.Available() >= peek_index_ + opsize;
 
 		if (!mdr_gated && !jump_gated && enough) {
 			s1_.valid = true;
-			s1_.addr = fetch_target_;
-			s1_.mir = mir;
+			s1_.mir = head.mir;
 			s1_.sig = sig;
+			s1_.pop_n = head.pop_n;
 			s1_.a = 0;
 			s1_.b = 0;
 			s1_.c = 0;
@@ -312,7 +274,7 @@ private:
 			s1_.mdr = 0;
 			s1_.rd_pending = false;
 			s1_.wr_pending = false;
-			fetch_target_ = mir.GetNextAddress();
+			queue_.PopHead();
 		} else {
 			++stall_cycles_;
 			if (trace_) {
@@ -325,9 +287,9 @@ private:
 
 	// ------------------------------------------------------------- latch
 
-	// Stage 1: mux the A/B buses and latch into the S1 occupant's a/b.
-	// MBR reads peek at fetch_peek_index_ WITHOUT consuming -- the
-	// consumption happens at the MIR's retire (stage 3).
+	// Stage 2: mux the A/B buses and latch into the MIR1 occupant's a/b.
+	// MBR reads peek at peek_index_ WITHOUT consuming -- the
+	// consumption happens at the MIR's retire (MIR3).
 	void LatchS1() {
 		if (!s1_.valid) return;
 
@@ -337,16 +299,16 @@ private:
 			bus_a = regs_.mdr;
 			break;
 		case AREAD_MBR_SIGNED:
-			bus_a = (uint32_t)ifu_.PeekAtSigned(fetch_peek_index_);
+			bus_a = (uint32_t)ifu_.PeekAtSigned(peek_index_);
 			break;
 		case AREAD_MBR_UNSIGNED:
-			bus_a = ifu_.PeekAt(fetch_peek_index_);
+			bus_a = ifu_.PeekAt(peek_index_);
 			break;
 		case AREAD_MBR2_SIGNED:
-			bus_a = (uint32_t)ifu_.Peek2AtSigned(fetch_peek_index_);
+			bus_a = (uint32_t)ifu_.Peek2AtSigned(peek_index_);
 			break;
 		case AREAD_MBR2_UNSIGNED:
-			bus_a = ifu_.Peek2At(fetch_peek_index_);
+			bus_a = ifu_.Peek2At(peek_index_);
 			break;
 		case AREAD_SP:
 			bus_a = regs_.sp;
@@ -394,7 +356,7 @@ private:
 			// The IFU's PC plus the bytes the older occupants will
 			// consume before this MIR's operands reach the queue
 			// front: the PC as the microcode expects it.
-			bus_b = ifu_.GetPC() + fetch_peek_index_;
+			bus_b = ifu_.GetPC() + peek_index_;
 			break;
 		case BREAD_H:
 			bus_b = regs_.h;
@@ -409,11 +371,11 @@ private:
 
 	// --------------------------------------------------------------- ALU
 
-	// Stage 2: the ALU runs on the latched A/B with the forward taps
-	// applied. Tap 1: S3's c (gap-1 producer -- its writeback lands at
-	// stage 4 of THIS cycle, after this ALU). Tap 2: S4's carried c
+	// Stage 3: the ALU runs on the latched A/B with the forward taps
+	// applied. Tap 1: MIR3's c (gap-1 producer -- its writeback lands at
+	// stage 4 of THIS cycle, after this ALU). Tap 2: MIR4's carried c
 	// (gap-2 producer -- its writeback was after the consumer's latch).
-	// The youngest producer wins (S3 before S4).
+	// The youngest producer wins (MIR3 before MIR4).
 	void ExecuteS2() {
 		if (!s2_.valid) return;
 
@@ -443,17 +405,19 @@ private:
 
 	// ------------------------------------------------------------- retire
 
-	// Stage 3: retire the S3 occupant -- record the memory ops, consume
-	// the operand bytes, resolve the dispatch, validate the fetch chain.
-	// Returns false (wholesale hold) when the queue cannot satisfy the
-	// retire's byte needs -- the jmpc byte of a post-jump dispatch may
-	// still be in flight even though the fetch-time checks passed.
-	bool RetireS3() {
-		if (!s3_.valid) return true;
+	// Stage 4: retire the MIR3 occupant -- pop the routine's opcode
+	// bytes, record the memory ops, consume the operand bytes, resolve
+	// split branches, halt. The delivery gates guarantee every byte is
+	// available; the consumption order keeps the queue front aligned.
+	void RetireS3() {
+		if (!s3_.valid) return;
 
-		uint32_t need = Opsize(s3_.sig) + (s3_.mir.GetJMPC() ? 1 : 0);
-		if (ifu_.Available() < need) {
-			return false;
+		// Opcode pop: the routine's first MIR pops its instruction's
+		// opcode bytes (1, or 2 for wide), then its operands -- the
+		// opcode precedes the operands in the byte stream.
+		if (s3_.pop_n > 0) {
+			assert(ifu_.Available() >= s3_.pop_n);
+			ifu_.Consume(s3_.pop_n);
 		}
 
 		// Memory issue: the effective address/data come from the slot's
@@ -465,7 +429,7 @@ private:
 		s3_.rd_pending = s3_.sig.mem_rd != 0;
 		s3_.wr_pending = s3_.sig.mem_wr != 0;
 
-		// Operand consumption (the fetch check guaranteed the bytes).
+		// Operand consumption (the delivery check guaranteed the bytes).
 		switch (s3_.sig.a_read) {
 		case AREAD_MBR_SIGNED:
 		case AREAD_MBR_UNSIGNED:
@@ -479,28 +443,17 @@ private:
 			break;
 		}
 
-		// Dispatch: snapshot the byte AFTER the consumed operands, then
-		// resolve the MPC (jmpc consumes the snapshot byte itself).
-		uint32_t mbr_for_dispatch = ifu_.Read1();
-		if (s3_.mir.GetJMPC()) {
-			ifu_.Consume(1);
-		}
-		uint32_t resolved = s3_.mir.GetNextAddress();
-		if (s3_.mir.GetJAMN()) resolved |= (s3_.n << 8);
-		if (s3_.mir.GetJAMZ()) resolved |= (s3_.z << 8);
-		if (s3_.mir.GetJMPC()) resolved |= (mbr_for_dispatch & 0xFF);
-
-		// Chain validation: the fetched successor (S2's occupant) must
-		// match the resolved one; otherwise flush the two speculative
-		// slots and redirect the fetch stream.
-		if (!s2_.valid || s2_.addr != resolved) {
-			s1_.valid = false;
-			s2_.valid = false;
-			fetch_target_ = resolved;
-			stall_cycles_ += 2;
+		// Branch resolution: the dedicated branch MIR evaluates its JAM
+		// flags against the predecessor's N/Z carried in the MIR4 slot
+		// (the branch MIR is adjacent to the flag-computing MIR, so the
+		// MIR4 occupant is always that predecessor).
+		if (s3_.mir.GetJumpBit()) {
+			bool taken = (s3_.mir.GetJAMN() && s4_.n)
+				|| (s3_.mir.GetJAMZ() && s4_.z);
+			queue_.OnBranchResolved(taken);
 			if (trace_) {
-				std::printf("  flush: resolved=%03X s2=%03X\n",
-					resolved, s2_.addr);
+				std::printf("  branch resolved: taken=%d\n",
+					taken ? 1 : 0);
 			}
 		}
 
@@ -509,15 +462,17 @@ private:
 		}
 
 		++retire_cycles_;
-		return true;
 	}
 
 	// -------------------------------------------------------------- stage4
 
-	// Stage 4: memory + writeback + IFU. The order is load-bearing:
-	// (1) S4's pending ops deliver/commit, (2) S3's writeback applies --
-	// the younger MIR wins the MDR register (e.g. SWAP1's read delivery
-	// vs SWAP4's write_mdr in the same cycle), (3) the IFU refills.
+	// Stage 5: memory + writeback + IFU + front-end resync. The order
+	// is load-bearing:
+	// (1) MIR4's pending ops deliver/commit, (2) MIR3's writeback
+	// applies -- the younger MIR wins the MDR register (e.g. SWAP1's
+	// read delivery vs SWAP4's write_mdr in the same cycle), (3) a
+	// write_pc jump flushes the IFU and resyncs the decoder, (4) the
+	// IFU refills.
 	void Stage4() {
 		if (s4_.valid) {
 			if (s4_.wr_pending) {
@@ -537,7 +492,11 @@ private:
 			if (s3_.sig.write_opc) regs_.opc = s3_.c;
 			if (s3_.sig.write_sp)  regs_.sp = s3_.c;
 			if (s3_.sig.write_tos) regs_.tos = s3_.c;
-			if (s3_.sig.write_pc)  ifu_.Jump(s3_.c);
+			if (s3_.sig.write_pc) {
+				ifu_.Jump(s3_.c);
+				queue_.OnWritePcLanded();
+				decoder_.Resync(ifu_.GetPC());
+			}
 		}
 
 		ifu_.Cycle();
@@ -560,6 +519,8 @@ private:
 	Registers regs_ = { 0 };
 	ALU alu_;
 	ControlMemory control_memory_;
+	Decoder decoder_;
+	InstructionQueue queue_;
 	InstructionFetchUnit ifu_;
 	GlobalMemory* global_memory_ = nullptr;
 
@@ -568,17 +529,9 @@ private:
 	PipelineSlot s3_;
 	PipelineSlot s4_;
 
-	uint32_t fetch_target_ = 0;
-	uint32_t fetch_peek_index_ = 0;
+	uint32_t peek_index_ = 0;
 	bool halt_ = false;
-	bool hold_ = false;
 	bool trace_ = false;
 	uint64_t stall_cycles_ = 0;
 	uint64_t retire_cycles_ = 0;
-	uint64_t latch_cycles_ = 0;
-	uint64_t alu_cycles_ = 0;
-	uint64_t cassign_cycles_ = 0;
-	uint64_t mem_cycles_ = 0;
-	uint64_t busy_cycles_ = 0;
-	uint64_t empty_cycles_ = 0;
 };

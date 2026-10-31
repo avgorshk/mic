@@ -5,17 +5,18 @@
 constexpr uint32_t INVOKEVIRTUAL_ADDR = 0xB4;
 
 // 16 cycles (was 22). The index comes straight from MBR2 (no 3-cycle
-// assembly), the jump to the callee is write_pc (flush + refill), and
-// the four header bytes are consumed directly from the refilled queue:
-// each MBR read advances the queue, so the fetch cycles and their waits
-// collapse away. IV5 stalls once while the first callee block is in
-// flight -- the honest cost of the jump.
+// assembly), the jump to the callee is write_pc (flush + refill, the
+// decoder resyncs at the landing), and the four header bytes are
+// consumed directly from the refilled queue: each MBR read advances the
+// queue, so the fetch cycles and their waits collapse away. IV5's
+// delivery waits once while the first callee block is in flight (the
+// byte-availability gate at the queue -> MIR1 handoff) -- the honest
+// cost of the jump.
 class INVOKEVIRTUAL1MicroInstruction : public MicroInstruction {
 public:
 	INVOKEVIRTUAL1MicroInstruction() {
 		ALU_PASS_A(inst_);
 		REG_ASSIGN_A(inst_, MBR2_UNSIGNED, h);
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 1;
 	}
 };
 
@@ -27,7 +28,6 @@ public:
 		REG_READ_B(inst_, H);
 		REG_ASSIGN(inst_, CPP, mar);
 		inst_.mem_rd = 1;
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 2;
 	}
 };
 
@@ -38,7 +38,6 @@ public:
 		// address. (pool read pad)
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, PC, opc);
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 3;
 	}
 };
 
@@ -48,7 +47,6 @@ public:
 		// PC = the pool entry (the callee address): jump, flush, refill.
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, pc);
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 4;
 	}
 };
 
@@ -56,10 +54,9 @@ class INVOKEVIRTUAL5MicroInstruction : public MicroInstruction {
 public:
 	INVOKEVIRTUAL5MicroInstruction() {
 		// H = params_hi << 8 (consumes the first header byte; the
-		// refill lands during this cycle's stall/retry).
+		// refill lands during this MIR's delivery wait).
 		ALU_SLL8_A(inst_);
 		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 5;
 	}
 };
 
@@ -69,7 +66,6 @@ public:
 		ALU_OR(inst_);
 		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
 		REG_READ_B(inst_, H);
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 6;
 	}
 };
 
@@ -79,7 +75,6 @@ public:
 		ALU_SUB(inst_);
 		REG_READ_A(inst_, H);
 		REG_ASSIGN(inst_, SP, tos);
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 7;
 	}
 };
 
@@ -88,7 +83,6 @@ public:
 	INVOKEVIRTUAL8MicroInstruction() {
 		ALU_INC_B(inst_);
 		REG_ASSIGN2(inst_, TOS, mar, tos);
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 8;
 	}
 };
 
@@ -97,7 +91,6 @@ public:
 	INVOKEVIRTUAL9MicroInstruction() {
 		ALU_SLL8_A(inst_);
 		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 9;
 	}
 };
 
@@ -107,7 +100,6 @@ public:
 		ALU_OR(inst_);
 		REG_ASSIGN_A(inst_, MBR_UNSIGNED, h);
 		REG_READ_B(inst_, H);
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 10;
 	}
 };
 
@@ -118,7 +110,6 @@ public:
 		REG_READ_A(inst_, H);
 		REG_ASSIGN(inst_, SP, mdr);
 		inst_.mem_wr = 1;
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 11;
 	}
 };
 
@@ -127,7 +118,6 @@ public:
 	INVOKEVIRTUAL12MicroInstruction() {
 		ALU_PASS_B(inst_);
 		REG_ASSIGN2(inst_, MDR, mar, sp);
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 12;
 	}
 };
 
@@ -137,7 +127,6 @@ public:
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, OPC, mdr);
 		inst_.mem_wr = 1;
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 13;
 	}
 };
 
@@ -146,7 +135,6 @@ public:
 	INVOKEVIRTUAL14MicroInstruction() {
 		ALU_INC_B(inst_);
 		REG_ASSIGN2(inst_, SP, mar, sp);
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 14;
 	}
 };
 
@@ -156,19 +144,17 @@ public:
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, LV, mdr);
 		inst_.mem_wr = 1;
-		inst_.next_address = INVOKEVIRTUAL_ADDR + 15;
 	}
 };
 
 class INVOKEVIRTUAL16MicroInstruction : public MicroInstruction {
 public:
 	INVOKEVIRTUAL16MicroInstruction() {
-		// LV = TOS and dispatch in one cycle: the callee's opcode has
-		// been at the queue front since the header bytes were consumed
-		// (IV5/IV6/IV9/IV10), so no stall is possible here.
+		// LV = TOS. The end bit lets the queue confirm the resynced
+		// decoder (the callee's opcode has been at the queue front
+		// since the header bytes were consumed by IV5/IV6/IV9/IV10).
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, lv);
-		inst_.jmpc = 1;
-		inst_.next_address = 0;
+		END_MIR(inst_);
 	}
 };

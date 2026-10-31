@@ -4,12 +4,11 @@
 
 constexpr uint32_t NOP_ADDR = 0x0;
 
-// NOP is now the machine's decode step: it dispatches the next opcode
-// directly (goto(MBR)). MAIN no longer exists.
+// nop: a no-op MIR. The queue's copy terminates on the end bit; the
+// opcode itself is popped by this routine's first MIR at its retire.
 class NOPMicroInstruction : public MicroInstruction {
 public:
 	NOPMicroInstruction() {
-		inst_.jmpc = 1;
-		inst_.next_address = 0;
+		END_MIR(inst_);
 	}
 };

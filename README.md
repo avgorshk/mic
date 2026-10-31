@@ -101,15 +101,16 @@ constant pool with the method pointers for `collatz`, `mul`, `div`,
 
 ```
 .\x64\Debug\micsim.exe -i program.bin -k constants.bin -o output.bin
-Cycles completed: 6867492 (stall: 4599366)
-Micro-clocks completed: 6867492 (stall: 4599366)
+Cycles completed: 5027289
+Busy cycles (retirements): 3461791
+Empty cycles: 1565498
 Output written: output.bin
 ```
 
-(About 6.9 million cycles -- most of them the repeated-subtraction `div`
+(About 5 million cycles -- most of them the repeated-subtraction `div`
 doing `n / 2` on values up to 9232; the simulator still finishes in a
-couple of seconds. The stall counter counts the pipeline's gate holds
-and dispatch flushes. If a program ever runs away, add
+couple of seconds. Busy cycles retire a MIR; the rest are empty
+pipeline bubbles. If a program ever runs away, add
 `--max-cycles 10000000`.)
 
 ### Step 7: verify the result
@@ -145,9 +146,13 @@ by the toolchain.
   write-enabled registers (MAR, MDR, PC, MBR, SP, LV, CPP, TOS, OPC),
   all in `mic.h`; the ALU (`alu.h`) computes AND/OR/INVB/SUM with
   `inva`/`inc` for subtraction and `sll8`/`sra1` shifts.
-- Control: 512-entry control memory (`control_memory.h`) where every
-  instruction's micro-routine lives; dispatch is `JMPC`: the fetched
-  opcode byte IS the microcode address.
+- Control: the instruction decoder (`decoder.h`) maps every opcode to
+  its micro-routine index and its byte footprint (WIDE is a two-step
+  lookup); the instruction queue (`instruction_queue.h`) expands
+  routines from the 128-entry control memory (`control_memory.h`) into
+  a 16-deep MIR FIFO that feeds the conveyor. Conditional branches are
+  split into a work MIR plus a dedicated branch MIR; the taken block is
+  shared and hardwired.
 - Memory: one flat array split into three segments, byte-addressed for
   code (PC), word-addressed (32-bit LE) for constants (CPP) and data
   (LV/SP/MAR). Defaults 1 KB each, resizable with `-p/-c/-d`.
@@ -169,7 +174,9 @@ and dumps the data segment as 32-bit little-endian words to `output.bin`.
 
 ## 2. Instruction set
 
-Opcode byte == microcode address. Branch offsets are 16-bit signed,
+The decoder maps each opcode byte to a micro-routine (the opcode byte
+is not itself an address; wide instructions occupy 2 opcode bytes + 2
+data bytes). Branch offsets are 16-bit signed,
 relative to the branch instruction itself. Locals: `iload k` reads word
 `LV + k`; called functions must not use slot 0 (the OBJREF slot), main may.
 
@@ -307,6 +314,9 @@ outputs.
 ```
 micsim/               simulator (C++17, MSVC)
   micro_instructions/ one header per micro-routine
+  decoder.h           opcode -> {size, routine index} SRAM, byte-stream walk
+  instruction_queue.h routine expansion into the MIR FIFO
+  control_memory.h    the routine SRAM layout
 micsim_unit_tests/    doctest suites
 compiler/             micc.py, lexer, parser, AST, codegen, runtime libs
 assembler/            asm.py
@@ -333,12 +343,13 @@ rows: cycle count x 3).
 | baseline | `0f1d1f4` | 46,352,994 | 0 | 46,352,994 | 1.00x | dispatch-timing model fix (JMPC sees the pre-edge MBR); the reference point |
 | a-bus | `d4b01da` | 40,385,256 | 0 | 40,385,256 | 1.14x | dual ALU buses (A-bus mux); operands without H round trips |
 | ifu | `fbdcbd4` | 30,646,959 | 60,255 | 30,707,214 | 1.52x | instruction fetch unit (PC + 6-byte queue, 4-byte refills); MAIN removed, NOP is the decode step |
-| pipeline | `b09d658` | 19,683,918 | 15,302 | 19,699,220 | 2.37x | 4-stage MIR conveyor with forwarding, fetch gates, dispatch flushes; 1 cycle = 1 micro-clock |
+| pipeline | `b09d658` | 10,215,653 | 9,483,567 | 19,699,220 | 2.37x | 4-stage MIR conveyor with forwarding, fetch gates, dispatch flushes; 1 cycle = 1 micro-clock |
+| 7-stage | `TBD` | 9,972,287 | 4,579,965 | 14,552,252 | 3.20x | instruction decoder + MIR queue feed the conveyor; dispatch flushes gone |
 
-Pre-pipeline busy/empty are derived (their stalls were whole-machine
-holds); the pipeline row is measured. `run_bench.py` also reports a
-`TOTAL (stall events)` figure for the pipeline machine -- the gate-hold
-and flush event counter, NOT idle cycles.
+Busy = cycles where a MIR retired, Empty = the rest (Busy + Empty ==
+all, exactly). The pre-pipeline rows are derived (every cycle retired
+one MIR except the whole-machine holds); the pipeline and 7-stage rows
+are measured.
 
 ## 8. Known limits
 

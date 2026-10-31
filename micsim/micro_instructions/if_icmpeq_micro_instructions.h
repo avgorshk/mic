@@ -1,7 +1,6 @@
 #pragma once
 #include "../micro_instruction.h"
 
-#include "f_micro_instructions.h"
 
 constexpr uint32_t IF_ICMPEQ_ADDR = 0x9F;
 
@@ -11,7 +10,6 @@ public:
 		ALU_DEC_B(inst_);
 		REG_ASSIGN2(inst_, SP, mar, sp);
 		inst_.mem_rd = 1;
-		inst_.next_address = IF_ICMPEQ_ADDR + 1;
 	}
 };
 
@@ -20,7 +18,6 @@ public:
 	IF_ICMPEQ2MicroInstruction() {
 		ALU_DEC_B(inst_);
 		REG_ASSIGN2(inst_, SP, mar, sp);
-		inst_.next_address = IF_ICMPEQ_ADDR + 2;
 	}
 };
 
@@ -30,7 +27,6 @@ public:
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, h);
 		inst_.mem_rd = 1;
-		inst_.next_address = IF_ICMPEQ_ADDR + 3;
 	}
 };
 
@@ -39,7 +35,6 @@ public:
 	IF_ICMPEQ4MicroInstruction() {
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, opc);
-		inst_.next_address = IF_ICMPEQ_ADDR + 4;
 	}
 };
 
@@ -48,17 +43,16 @@ public:
 	IF_ICMPEQ5MicroInstruction() {
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, tos);
-		inst_.next_address = IF_ICMPEQ_ADDR + 5;
 	}
 };
 
 class IF_ICMPEQ6MicroInstruction : public MicroInstruction {
 public:
 	IF_ICMPEQ6MicroInstruction() {
+		// C = H - OPC, flags = C. The dedicated branch MIR that follows
+		// evaluates its JAM bits against these flags.
 		ALU_SUB(inst_);
 		REG_READ_A(inst_, H);
 		REG_READ_B(inst_, OPC);
-		inst_.jamz = 1;
-		inst_.next_address = F_ADDR;
 	}
 };

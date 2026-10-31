@@ -591,8 +591,9 @@ TEST_CASE("INVOKEVIRTUAL") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	// IV16's dispatch (LV = TOS + jmpc) resolves at cycle 26.
-	for (int i = 0; i < 26; ++i) {
+	// The callee's first BIPUSH1 retires at cycle 24: the frame is set
+	// up, its opcode is popped, and its SP increment has landed.
+	for (int i = 0; i < 24; ++i) {
 		mic.Cycle();
 	}
 
@@ -605,8 +606,8 @@ TEST_CASE("INVOKEVIRTUAL") {
 	CHECK(called_proc_lv == memory.GetDataSegmentAddress());
 
 	auto regs = mic.GetRegisters();
-	CHECK(regs.sp == memory.GetDataSegmentAddress() + data.size() + local_vars_count + 1);
-	// PC = one past the callee's first opcode: IV16's dispatch consumed it.
+	CHECK(regs.sp == memory.GetDataSegmentAddress() + data.size() + local_vars_count + 2);
+	// PC = one past the callee's first opcode: BIPUSH1's retire popped it.
 	CHECK(regs.pc == 9);
 	CHECK(regs.lv == memory.GetDataSegmentAddress() + 4);
 	CHECK(regs.mbr == 0x0);
@@ -639,9 +640,10 @@ TEST_CASE("IRETURN") {
 	mic.SetTOS(data[sp]);
 	mic.SetLV(memory.GetDataSegmentAddress() + 4);
 
-	// IRETURN8's dispatch resolves at cycle 19; its pending write and
-	// the return target's bipush land by cycle 22.
-	for (int i = 0; i < 22; ++i) {
+	// The return target's BIPUSH1 retires at cycle 17: the return value
+	// is written, the caller frame is restored, and the opcode is
+	// popped.
+	for (int i = 0; i < 17; ++i) {
 		mic.Cycle();
 	}
 
@@ -741,7 +743,7 @@ TEST_CASE("Program Equal Wide") {
 		ISTORE_ADDR, 0x01,
 		WIDE_ADDR, ILOAD_ADDR, 0x00, 0x01,
 		BIPUSH_ADDR, 0x03,
-		IF_ICMPEQ_ADDR, 0x00, 0x0D,
+		IF_ICMPEQ_ADDR, 0x00, 0x0F,
 		ILOAD_ADDR, 0x02,
 		BIPUSH_ADDR, 0x01,
 		ISUB_ADDR,

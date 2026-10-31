@@ -1,7 +1,6 @@
 #pragma once
 #include "../micro_instruction.h"
 
-#include "f_micro_instructions.h"
 
 constexpr uint32_t IFLT_ADDR = 0x9B;
 
@@ -11,7 +10,6 @@ public:
 		ALU_DEC_B(inst_);
 		REG_ASSIGN2(inst_, SP, mar, sp);
 		inst_.mem_rd = 1;
-		inst_.next_address = IFLT_ADDR + 1;
 	}
 };
 
@@ -21,7 +19,6 @@ public:
 		// read-latency pad
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, TOS, opc);
-		inst_.next_address = IFLT_ADDR + 2;
 	}
 };
 
@@ -30,16 +27,15 @@ public:
 	IFLT3MicroInstruction() {
 		ALU_PASS_B(inst_);
 		REG_ASSIGN(inst_, MDR, tos);
-		inst_.next_address = IFLT_ADDR + 3;
 	}
 };
 
 class IFLT4MicroInstruction : public MicroInstruction {
 public:
 	IFLT4MicroInstruction() {
+		// C = OPC, flags = OPC. The dedicated branch MIR that follows
+		// evaluates its JAM bits against these flags.
 		ALU_PASS_B(inst_);
 		REG_READ_B(inst_, OPC);
-		inst_.jamn = 1;
-		inst_.next_address = F_ADDR;
 	}
 };

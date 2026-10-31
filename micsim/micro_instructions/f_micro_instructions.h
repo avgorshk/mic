@@ -1,23 +1,17 @@
 #pragma once
 #include "../micro_instruction.h"
 
-
-constexpr uint32_t F_ADDR = 0xF0;
-
+// The not-taken continuation of a split conditional branch: consumes the
+// 2-byte offset. It sits directly after the branch MIR of each branch
+// routine, so the queue resumes copying exactly here on not-taken.
+// (The old F2 dispatch step is gone: the next instruction is decoded by
+// the decoder, not dispatched.)
 class F1MicroInstruction : public MicroInstruction {
 public:
 	F1MicroInstruction() {
 		// Not-taken branch: discard the 2-byte offset. The MBR2 read
-		// consumes it; the next opcode is already behind it.
+		// consumes it at the retire.
 		REG_READ_A(inst_, MBR2_UNSIGNED);
-		inst_.next_address = F_ADDR + 1;
-	}
-};
-
-class F2MicroInstruction : public MicroInstruction {
-public:
-	F2MicroInstruction() {
-		inst_.jmpc = 1;
-		inst_.next_address = 0;
+		END_MIR(inst_);
 	}
 };

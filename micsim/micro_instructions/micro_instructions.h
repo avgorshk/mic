@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bipush_micro_instructions.h"
+#include "branch_micro_instruction.h"
 #include "f_micro_instructions.h"
 #include "goto_micro_instructions.h"
 #include "halt_micro_instruction.h"
@@ -25,4 +26,3 @@
 #include "t_micro_instruction.h"
 #include "wide_iload_micro_instructions.h"
 #include "wide_istore_micro_instructions.h"
-#include "wide_micro_instruction.h"

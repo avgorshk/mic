@@ -7,6 +7,7 @@ constexpr uint32_t HALT_ADDR = 0xFF;
 class HALTMicroInstruction : public MicroInstruction {
 public:
 	HALTMicroInstruction() {
-		inst_.next_address = HALT_SIGNAL;
+		HALT_MIR(inst_);
+		END_MIR(inst_);
 	}
 };

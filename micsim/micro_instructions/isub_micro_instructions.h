@@ -10,7 +10,6 @@ public:
 		ALU_DEC_B(inst_);
 		REG_ASSIGN2(inst_, SP, mar, sp);
 		inst_.mem_rd = 1;
-		inst_.next_address = ISUB_ADDR + 1;
 	}
 };
 
@@ -19,7 +18,6 @@ public:
 	ISUB2MicroInstruction() {
 		// read-latency pad: the operand delivers at this cycle's edge
 		// and is visible from ISUB3.
-		inst_.next_address = ISUB_ADDR + 2;
 	}
 };
 
@@ -30,7 +28,6 @@ public:
 		REG_READ_A(inst_, TOS);
 		REG_ASSIGN2(inst_, MDR, tos, mdr);
 		inst_.mem_wr = 1;
-		inst_.jmpc = 1;
-		inst_.next_address = 0;
+		END_MIR(inst_);
 	}
 };

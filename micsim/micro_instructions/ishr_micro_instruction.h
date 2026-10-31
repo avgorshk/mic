@@ -14,7 +14,6 @@ public:
 		alu.sra1 = 1;  // result >>= 1 with sign fill
 		inst_.alu = alu;
 		REG_ASSIGN(inst_, TOS, tos);
-		inst_.jmpc = 1;
-		inst_.next_address = 0;
+		END_MIR(inst_);
 	}
 };

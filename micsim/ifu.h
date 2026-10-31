@@ -8,12 +8,14 @@
 #include "global_memory.h"
 
 // Instruction Fetch Unit: owns the PC, the prefetch address (IMAR) and a
-// 6-byte shift-register queue of program bytes. Refills 4 bytes at a time
-// from memory (one outstanding refill, 1-cycle delivery latency, IMAR
-// auto-increments by 4 -- the ALU is never involved). MBR1 is the queue's
-// front byte, MBR2 the two front bytes as a big-endian 16-bit word; reads
-// via the ALU A-bus are the consumption events (Consume advances the
-// queue and the PC). Jump flushes the queue and refills from the target.
+// 16-byte shift-register queue of program bytes. Refills 4 bytes at a
+// time from memory (one outstanding refill, 1-cycle delivery latency,
+// IMAR auto-increments by 4 -- the ALU is never involved). MBR1 is the
+// queue's front byte, MBR2 the two front bytes as a big-endian 16-bit
+// word; reads via the ALU A-bus are the consumption events (Consume
+// advances the queue and the PC). Jump flushes the queue and refills
+// from the target. The decoder peeks at its walk offset (never
+// consumes); the queue and the pipeline consume in stream order.
 class InstructionFetchUnit {
 public:
 	InstructionFetchUnit()
@@ -23,7 +25,8 @@ public:
 		memory_ = memory;
 		pc_ = program_start;
 		imar_ = program_start;
-		// Pre-fill the first block so MAIN does not stall at startup.
+		// Pre-fill the first block so the decoder does not stall at
+		// startup.
 		uint8_t is_written = 0;
 		uint32_t block = 0;
 		memory_->FetchBlock(1, imar_, is_written, block);
@@ -56,8 +59,8 @@ public:
 	}
 
 	// Read-only peeks at an offset from the queue front (no consume).
-	// The pipelined machine's S1 latch reads the operand bytes that sit
-	// behind the older occupants' yet-unconsumed bytes.
+	// The decoder walks the byte stream through these peeks; the
+	// pipeline's MIR1 latch reads its operand bytes at the peek index.
 	uint8_t PeekAt(uint32_t n) const {
 		if (n >= queue_.size()) return 0;
 		return queue_[n];
@@ -82,15 +85,8 @@ public:
 		return static_cast<uint32_t>(queue_.size());
 	}
 
-	// True when the queue cannot satisfy this cycle's byte needs -- the
-	// machine holds (no register writes, no MPC update) until the refill
-	// lands.
-	bool Stall(uint32_t need) const {
-		return Available() < need;
-	}
-
 	// Advance the queue by n consumed bytes (1 or 2); PC follows the
-	// queue front. The stall check guarantees enough bytes are available.
+	// queue front. The gate checks guarantee enough bytes are available.
 	void Consume(uint32_t n) {
 		assert(n <= queue_.size());
 		for (uint32_t i = 0; i < n; ++i) {
@@ -99,11 +95,12 @@ public:
 		pc_ += n;
 	}
 
-	// Program-counter change (branch / invokevirtual / ireturn): flush
-	// the queue and refill from the target address. The refill itself is
-	// issued by the trigger in Cycle() (queue below the threshold), so
-	// its delivery lands one full cycle later -- the honest memory
-	// latency. A stale in-flight refill is drained and discarded.
+	// Program-counter change (branch / goto / invokevirtual / ireturn):
+	// flush the queue and refill from the target address. The refill
+	// itself is issued by the trigger in Cycle() (queue below the
+	// threshold), so its delivery lands one full cycle later -- the
+	// honest memory latency. A stale in-flight refill is drained and
+	// discarded.
 	void Jump(uint32_t addr) {
 		queue_.clear();
 		pc_ = addr;
@@ -128,12 +125,15 @@ public:
 				refill_pending_ = false;
 			}
 		}
-		if (!refill_pending_ && queue_.size() <= 2) {
+		if (!refill_pending_ && queue_.size() <= kRefillThreshold) {
 			IssueRefill();
 		}
 	}
 
 private:
+	static constexpr size_t kQueueCapacity = 16;
+	static constexpr size_t kRefillThreshold = 8;
+
 	void IssueRefill() {
 		if (refill_pending_) return;
 		uint8_t is_written = 0;
@@ -144,7 +144,7 @@ private:
 	}
 
 	void PushBlock(uint32_t block) {
-		assert(queue_.size() + 4 <= 6);
+		assert(queue_.size() + 4 <= kQueueCapacity);
 		// Little-endian host: byte i of the block is (block >> 8*i).
 		for (int i = 0; i < 4; ++i) {
 			queue_.push_back((block >> (8 * i)) & 0xFF);
