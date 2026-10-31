@@ -55,6 +55,29 @@ public:
 		return (w & 0x8000) ? (int32_t)(w | 0xFFFF0000) : (int32_t)w;
 	}
 
+	// Read-only peeks at an offset from the queue front (no consume).
+	// The pipelined machine's S1 latch reads the operand bytes that sit
+	// behind the older occupants' yet-unconsumed bytes.
+	uint8_t PeekAt(uint32_t n) const {
+		if (n >= queue_.size()) return 0;
+		return queue_[n];
+	}
+
+	int32_t PeekAtSigned(uint32_t n) const {
+		uint8_t b = PeekAt(n);
+		return (b & 0x80) ? (int32_t)(b | 0xFFFFFF00) : (int32_t)b;
+	}
+
+	uint16_t Peek2At(uint32_t n) const {
+		if (n + 1 >= queue_.size()) return 0;
+		return (uint16_t)((queue_[n] << 8) | queue_[n + 1]);
+	}
+
+	int32_t Peek2AtSigned(uint32_t n) const {
+		uint16_t w = Peek2At(n);
+		return (w & 0x8000) ? (int32_t)(w | 0xFFFF0000) : (int32_t)w;
+	}
+
 	uint32_t Available() const {
 		return static_cast<uint32_t>(queue_.size());
 	}

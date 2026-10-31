@@ -136,32 +136,13 @@ public:
 	}
 
 public:
-	uint32_t GetMPC() const {
-		return mpc_;
-	}
-
-	MicroInstruction LoadMIR() {
-		assert(mpc_ < CONTROL_MEMORY_SIZE);
-		mir_ = memory_[mpc_];
-		return mir_;
-	}
-
-	void UpdateMPC(uint8_t n, uint8_t z, uint32_t mbr) {
-		mpc_ = mir_.GetNextAddress();
-		assert(mpc_ <= 0x1FF);
-		if (mir_.GetJAMN() == 1) {
-			mpc_ |= (n << 8);
-		}
-		if (mir_.GetJAMZ() == 1) {
-			mpc_ |= (z << 8);
-		}
-		if (mir_.GetJMPC() == 1) {
-			mpc_ |= (mbr & 0xFF);
-		}
+	// The pipelined machine fetches MIRs by address along the static
+	// next_address chain; the dispatch resolution is in the MIC.
+	MicroInstruction FetchMIR(uint32_t addr) const {
+		assert(addr < CONTROL_MEMORY_SIZE);
+		return memory_[addr];
 	}
 
 private:
 	std::vector<MicroInstruction> memory_;
-	uint16_t mpc_ = 0;
-	MicroInstruction mir_;
 };

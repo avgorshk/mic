@@ -73,21 +73,20 @@ public:
 		return data / sizeof(uint32_t);
 	}
 
-	uint8_t Fetch(uint8_t is_fetch, uint32_t pc, uint8_t& is_written) {
-		uint8_t mbr = 0;
-		is_written = 0;
-		if (is_fetch_) {
-			assert(fetch_pc_ < program_segment_size_);
-			mbr = memory_[fetch_pc_];
-			is_written = 1;
-			is_fetch_ = 0;
-		}
-		if (is_fetch) {
-			is_fetch_ = 1;
-			assert(pc < program_segment_size_);
-			fetch_pc_ = pc;
-		}
-		return mbr;
+	// Synchronous word access for the pipelined machine: the memory
+	// latency lives in the pipeline slots (issue at S3, deliver at S4),
+	// not in internal latches here -- a latched memory would deliver a
+	// read in the same cycle it was issued.
+	uint32_t ReadNow(uint32_t mar) {
+		assert(mar * sizeof(uint32_t) < memory_.size());
+		uint32_t* ptr = reinterpret_cast<uint32_t*>(memory_.data());
+		return ptr[mar];
+	}
+
+	void WriteNow(uint32_t mar, uint32_t mdr) {
+		assert(mar * sizeof(uint32_t) < memory_.size());
+		uint32_t* ptr = reinterpret_cast<uint32_t*>(memory_.data());
+		ptr[mar] = mdr;
 	}
 
 	// 4-byte block fetch for the instruction fetch unit: same issue/deliver
@@ -111,52 +110,12 @@ public:
 		}
 	}
 
-	uint32_t Read(uint8_t is_read, uint32_t mar, uint8_t& is_written) {
-		uint32_t mdr = 0;
-		is_written = 0;
-		if (is_read_) {
-			assert(read_addr_ * sizeof(uint32_t) < memory_.size());
-			uint32_t* ptr = reinterpret_cast<uint32_t*>(memory_.data());
-			mdr = ptr[read_addr_];
-			is_written = 1;
-			is_read_ = 0;
-		}
-		if (is_read) {
-			is_read_ = 1;
-			assert(mar * sizeof(uint32_t) < memory_.size());
-			read_addr_ = mar;
-		}
-		return mdr;
-	}
-
-	void Write(uint8_t is_write, uint32_t mar, uint32_t mdr) {
-		if (is_write_) {
-			assert(write_addr_ * sizeof(uint32_t) < memory_.size());
-			uint32_t* ptr = reinterpret_cast<uint32_t*>(memory_.data());
-			ptr[write_addr_] = write_data_;
-			is_write_ = 0;
-		}
-		if (is_write) {
-			is_write_ = 1;
-			assert(mar * sizeof(uint32_t) < memory_.size());
-			write_addr_ = mar;
-			write_data_ = mdr;
-		}
-	}
-
 private:
 	uint32_t program_segment_size_ = 0;
 	uint32_t constant_segment_size_ = 0;
 	uint32_t data_segment_size_ = 0;
 	std::vector<uint8_t> memory_;
 
-	uint8_t is_fetch_ = 0;
-	uint32_t fetch_pc_ = 0;
 	uint8_t is_fetch_block_ = 0;
 	uint32_t fetch_block_addr_ = 0;
-	uint8_t is_read_ = 0;
-	uint32_t read_addr_ = 0;
-	uint8_t is_write_ = 0;
-	uint32_t write_addr_ = 0;
-	uint32_t write_data_ = 0;
 };

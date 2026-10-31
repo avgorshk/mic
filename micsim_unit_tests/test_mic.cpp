@@ -8,6 +8,17 @@ constexpr uint32_t PROGRAM_SEGMENT_SIZE = 1024;   // 1 KB
 constexpr uint32_t CONSTANT_SEGMENT_SIZE = 1024;  // 1 KB
 constexpr uint32_t DATA_SEGMENT_SIZE = 1024;      // 1 KB
 
+// The pipelined machine (4-slot conveyor): tests either run to halt or
+// run a fixed number of cycles. Startup: NOP dispatches the first
+// opcode at cycle 3 (flush +2), the first routine MIR enters S1 at
+// cycle 4; a routine MIR retires at fetch cycle + 2.
+static void RunToHalt(MIC& mic) {
+	int guard = 0;
+	while (!mic.Cycle() && ++guard < 1000) {
+	}
+	CHECK(guard < 1000);
+}
+
 TEST_CASE("Signals Size") {
 	CHECK(sizeof(Signals) == 4);
 }
@@ -25,12 +36,7 @@ TEST_CASE("ILOAD") {
 	MIC mic(&memory);
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN (dispatch -> ILOAD; queue front = index)
-	mic.Cycle(); // ILOAD1 (MAR = LV + index, rd)
-	mic.Cycle(); // ILOAD2 (SP+1)
-	mic.Cycle(); // ILOAD3 (wr)
-	mic.Cycle(); // ILOAD4 (TOS = MDR, fused dispatch -> HALT)
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp + 1);
@@ -54,13 +60,7 @@ TEST_CASE("WIDE_ILOAD") {
 
 	MIC mic(&memory);
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN (dispatch -> WIDE)
-	mic.Cycle(); // WIDE2 (dispatch on the widened opcode)
-	mic.Cycle(); // WIDE_ILOAD1 (MAR = LV + 16-bit index, rd)
-	mic.Cycle(); // WIDE_ILOAD2 (SP+1)
-	mic.Cycle(); // WIDE_ILOAD3 (wr)
-	mic.Cycle(); // WIDE_ILOAD4 (TOS = MDR, fused dispatch -> HALT)
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	auto varnum = (program[2] << 8) | program[3];
@@ -86,12 +86,7 @@ TEST_CASE("IADD") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // IADD1 (SP-1, rd)
-	mic.Cycle(); // IADD2 (read-latency pad)
-	mic.Cycle(); // IADD3 (fused dispatch -> HALT)
-	mic.Cycle(); // HALT1
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -116,12 +111,7 @@ TEST_CASE("ISUB") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // ISUB1
-	mic.Cycle(); // ISUB2
-	mic.Cycle(); // ISUB3 (fused dispatch -> HALT)
-	mic.Cycle(); // HALT1
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -146,12 +136,7 @@ TEST_CASE("IAND") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // IAND1
-	mic.Cycle(); // IAND2
-	mic.Cycle(); // IAND3 (fused dispatch -> HALT)
-	mic.Cycle(); // HALT1
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -176,12 +161,7 @@ TEST_CASE("IOR") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // IOR1
-	mic.Cycle(); // IOR2
-	mic.Cycle(); // IOR3 (fused dispatch -> HALT)
-	mic.Cycle(); // HALT1
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -206,10 +186,7 @@ TEST_CASE("DUP") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP-dispatch -> DUP
-	mic.Cycle(); // DUP1
-	mic.Cycle(); // DUP2 (fused dispatch -> HALT)
-	mic.Cycle(); // HALT1 (delivers DUP2's pending write)
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp + 1);
@@ -232,11 +209,7 @@ TEST_CASE("POP") {
 	MIC mic(&memory);
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // POP1
-	mic.Cycle(); // POP2
-	mic.Cycle(); // POP3 (fused dispatch -> HALT)
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -258,14 +231,7 @@ TEST_CASE("SWAP") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP-dispatch -> SWAP
-	mic.Cycle(); // SWAP1
-	mic.Cycle(); // SWAP2
-	mic.Cycle(); // SWAP3
-	mic.Cycle(); // SWAP4
-	mic.Cycle(); // SWAP5
-	mic.Cycle(); // SWAP6 (fused dispatch -> HALT)
-	mic.Cycle(); // HALT1
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp);
@@ -291,13 +257,7 @@ TEST_CASE("ISTORE") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // ISTORE1 (MAR = LV + index)
-	mic.Cycle(); // ISTORE2 (write TOS to the slot)
-	mic.Cycle(); // ISTORE3 (SP-1, rd)
-	mic.Cycle(); // ISTORE4 (read-latency pad)
-	mic.Cycle(); // ISTORE5 (TOS = MDR, fused dispatch -> HALT)
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -323,14 +283,7 @@ TEST_CASE("WIDE_ISTORE") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN (dispatch -> WIDE)
-	mic.Cycle(); // WIDE2 (dispatch on the widened opcode)
-	mic.Cycle(); // WIDE_ISTORE1 (MAR = LV + 16-bit index)
-	mic.Cycle(); // WIDE_ISTORE2 (write TOS to the slot)
-	mic.Cycle(); // WIDE_ISTORE3 (SP-1, rd)
-	mic.Cycle(); // WIDE_ISTORE4 (read-latency pad)
-	mic.Cycle(); // WIDE_ISTORE5 (TOS = MDR, fused dispatch -> HALT)
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -355,10 +308,7 @@ TEST_CASE("BIPUSH") {
 	MIC mic(&memory);
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 
-	mic.Cycle(); // NOP-dispatch -> BIPUSH (queue front = the operand)
-	mic.Cycle(); // BIPUSH1 (SP+1)
-	mic.Cycle(); // BIPUSH2 (TOS = sign-extended operand, fused dispatch)
-	mic.Cycle(); // HALT1 (delivers BIPUSH2's pending write)
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp + 1);
@@ -383,16 +333,10 @@ TEST_CASE("IF_ICMPEQ Equal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // IF_ICMPEQ1
-	mic.Cycle(); // IF_ICMPEQ2
-	mic.Cycle(); // IF_ICMPEQ3
-	mic.Cycle(); // IF_ICMPEQ4
-	mic.Cycle(); // IF_ICMPEQ5
-	mic.Cycle(); // IF_ICMPEQ6 (jamz -> T)
-	mic.Cycle(); // T (OPC = branch address)
-	mic.Cycle(); // GOTO2 (write_pc: jump to the target)
+	// T (taken path) -> GOTO2 lands the jump at cycle 19.
+	for (int i = 0; i < 19; ++i) {
+		mic.Cycle();
+	}
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 2);
@@ -414,14 +358,10 @@ TEST_CASE("IF_ICMPEQ Nonequal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP-dispatch -> IF_ICMPEQ
-	mic.Cycle(); // IF_ICMPEQ1
-	mic.Cycle(); // IF_ICMPEQ2
-	mic.Cycle(); // IF_ICMPEQ3
-	mic.Cycle(); // IF_ICMPEQ4
-	mic.Cycle(); // IF_ICMPEQ5
-	mic.Cycle(); // IF_ICMPEQ6 (jamz -> F)
-	mic.Cycle(); // F1 (discard the 2-byte offset)
+	// F1 discards the offset at cycle 15.
+	for (int i = 0; i < 16; ++i) {
+		mic.Cycle();
+	}
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 2);
@@ -439,10 +379,10 @@ TEST_CASE("GOTO") {
 
 	MIC mic(&memory);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // GOTO1 (OPC = goto's own address)
-	mic.Cycle(); // GOTO2 (PC = OPC + 16-bit offset: jump)
+	// GOTO2's write_pc lands the jump at cycle 7.
+	for (int i = 0; i < 7; ++i) {
+		mic.Cycle();
+	}
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.pc == ((program[1] << 8) | program[2]));
@@ -463,11 +403,7 @@ TEST_CASE("LDC_W") {
 	MIC mic(&memory);
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN (queue front = 16-bit index)
-	mic.Cycle(); // LDC_W1 (MAR = CPP + index, rd)
-	mic.Cycle(); // LDC_W2 (SP+1)
-	mic.Cycle(); // LDC_W3 (TOS = MDR, wr, fused dispatch -> HALT)
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	auto index = ((program[1] << 8) | program[2]);
@@ -490,12 +426,7 @@ TEST_CASE("IINC") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN (queue front = index)
-	mic.Cycle(); // IINC1 (MAR = LV + index, rd)
-	mic.Cycle(); // IINC2 (read-latency pad)
-	mic.Cycle(); // IINC3 (MDR = MDR + const, wr, fused dispatch -> HALT)
-	mic.Cycle(); // HALT1 (delivers IINC3's pending write)
+	RunToHalt(mic);
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.pc == program.size());
@@ -518,14 +449,10 @@ TEST_CASE("IFLT Less") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // IFLT1
-	mic.Cycle(); // IFLT2
-	mic.Cycle(); // IFLT3
-	mic.Cycle(); // IFLT4 (jamn -> T)
-	mic.Cycle(); // T (OPC = branch address)
-	mic.Cycle(); // GOTO2 (jump)
+	// Taken: IFLT4 (jamn) -> T -> GOTO2 lands the jump at cycle 15.
+	for (int i = 0; i < 15; ++i) {
+		mic.Cycle();
+	}
 	auto regs = mic.GetRegisters();
 
 	auto offset = ((program[1] << 8) | program[2]);
@@ -548,12 +475,10 @@ TEST_CASE("IFLT More") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP-dispatch -> IFLT
-	mic.Cycle(); // IFLT1
-	mic.Cycle(); // IFLT2
-	mic.Cycle(); // IFLT3
-	mic.Cycle(); // IFLT4 (jamn -> F)
-	mic.Cycle(); // F1 (discard the 2-byte offset)
+	// Not-taken: F1 discards the offset at cycle 11.
+	for (int i = 0; i < 12; ++i) {
+		mic.Cycle();
+	}
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -576,12 +501,9 @@ TEST_CASE("IFLT Equal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP-dispatch -> IFLT
-	mic.Cycle(); // IFLT1
-	mic.Cycle(); // IFLT2
-	mic.Cycle(); // IFLT3
-	mic.Cycle(); // IFLT4 (jamn -> F)
-	mic.Cycle(); // F1 (discard the 2-byte offset)
+	for (int i = 0; i < 12; ++i) {
+		mic.Cycle();
+	}
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -604,14 +526,10 @@ TEST_CASE("IFEQ Equal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP
-	mic.Cycle(); // MAIN
-	mic.Cycle(); // IFEQ1
-	mic.Cycle(); // IFEQ2
-	mic.Cycle(); // IFEQ3
-	mic.Cycle(); // IFEQ4 (jamz -> T)
-	mic.Cycle(); // T
-	mic.Cycle(); // GOTO2 (jump)
+	// Taken: IFEQ4 (jamz) -> T -> GOTO2 lands the jump at cycle 15.
+	for (int i = 0; i < 15; ++i) {
+		mic.Cycle();
+	}
 	auto regs = mic.GetRegisters();
 
 	auto offset = ((program[1] << 8) | program[2]);
@@ -634,12 +552,9 @@ TEST_CASE("IFEQ Nonequal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP-dispatch -> IFEQ
-	mic.Cycle(); // IFEQ1
-	mic.Cycle(); // IFEQ2
-	mic.Cycle(); // IFEQ3
-	mic.Cycle(); // IFEQ4 (jamz -> F)
-	mic.Cycle(); // F1 (discard the 2-byte offset)
+	for (int i = 0; i < 12; ++i) {
+		mic.Cycle();
+	}
 	auto regs = mic.GetRegisters();
 
 	CHECK(regs.sp == regs.lv + sp - 1);
@@ -676,24 +591,10 @@ TEST_CASE("INVOKEVIRTUAL") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	mic.Cycle(); // NOP-dispatch -> INVOKEVIRTUAL (queue front = 16-bit index)
-	mic.Cycle(); // INVOKEVIRTUAL1 (H = index)
-	mic.Cycle(); // INVOKEVIRTUAL2 (MAR = CPP + index, rd)
-	mic.Cycle(); // INVOKEVIRTUAL3 (OPC = return address)
-	mic.Cycle(); // INVOKEVIRTUAL4 (PC = callee address: jump)
-	mic.Cycle(); // stall (callee block in flight)
-	mic.Cycle(); // INVOKEVIRTUAL5 (H = params_hi << 8)
-	mic.Cycle(); // INVOKEVIRTUAL6 (H |= params_lo)
-	mic.Cycle(); // INVOKEVIRTUAL7 (TOS = SP - params)
-	mic.Cycle(); // INVOKEVIRTUAL8 (TOS+1, MAR)
-	mic.Cycle(); // INVOKEVIRTUAL9 (H = locals_hi << 8)
-	mic.Cycle(); // INVOKEVIRTUAL10 (H |= locals_lo)
-	mic.Cycle(); // INVOKEVIRTUAL11 (MDR = SP + locals + 1, wr)
-	mic.Cycle(); // INVOKEVIRTUAL12 (MAR, SP = MDR)
-	mic.Cycle(); // INVOKEVIRTUAL13 (MDR = OPC, wr)
-	mic.Cycle(); // INVOKEVIRTUAL14 (SP+1, MAR)
-	mic.Cycle(); // INVOKEVIRTUAL15 (MDR = LV, wr)
-	mic.Cycle(); // INVOKEVIRTUAL16 (LV = TOS, fused dispatch -> BIPUSH)
+	// IV16's dispatch (LV = TOS + jmpc) resolves at cycle 26.
+	for (int i = 0; i < 26; ++i) {
+		mic.Cycle();
+	}
 
 	auto output = memory.GetData(data.size() + local_vars_count + 1 /* pc */ + 1 /* lv */);
 	auto objref = output[4];
@@ -738,17 +639,11 @@ TEST_CASE("IRETURN") {
 	mic.SetTOS(data[sp]);
 	mic.SetLV(memory.GetDataSegmentAddress() + 4);
 
-	mic.Cycle(); // NOP-dispatch -> IRETURN
-	mic.Cycle(); // IRETURN1
-	mic.Cycle(); // IRETURN2
-	mic.Cycle(); // IRETURN3
-	mic.Cycle(); // IRETURN4
-	mic.Cycle(); // IRETURN5 (PC = savedPC: jump + refill)
-	mic.Cycle(); // IRETURN6
-	mic.Cycle(); // IRETURN7
-	mic.Cycle(); // IRETURN8 (fused dispatch: the queue front is already
-	             // the return target's opcode)
-	mic.Cycle(); // BIPUSH1 (delivers IRETURN8's pending write)
+	// IRETURN8's dispatch resolves at cycle 19; its pending write and
+	// the return target's bipush land by cycle 22.
+	for (int i = 0; i < 22; ++i) {
+		mic.Cycle();
+	}
 
 	auto output = memory.GetData(5);
 	auto retval = output[output.size() - 1];
@@ -887,9 +782,7 @@ TEST_CASE("ISHR") {
 		MIC mic(&memory);
 		mic.SetTOS(8);
 
-		mic.Cycle(); // NOP
-		mic.Cycle(); // MAIN
-		mic.Cycle(); // ISHR (fused dispatch -> HALT)
+		RunToHalt(mic);
 		auto regs = mic.GetRegisters();
 		CHECK(regs.tos == 4);
 	}
@@ -903,9 +796,7 @@ TEST_CASE("ISHR") {
 		MIC mic(&memory);
 		mic.SetTOS(0xFFFFFFFCu);
 
-		mic.Cycle(); // NOP
-		mic.Cycle(); // MAIN
-		mic.Cycle(); // ISHR
+		RunToHalt(mic);
 		auto regs = mic.GetRegisters();
 		CHECK(regs.tos == 0xFFFFFFFEu);
 	}
@@ -919,9 +810,14 @@ TEST_CASE("ISHR") {
 		MIC mic(&memory);
 		mic.SetTOS(1);
 
-		mic.Cycle(); // NOP-dispatch -> ISHR (queue front = HALT)
+		// The startup NOP dispatch lands at cycle 3: the queue front is
+		// then the HALT opcode.
+		for (int i = 0; i < 3; ++i) {
+			mic.Cycle();
+		}
 		CHECK(mic.GetRegisters().mbr == HALT_ADDR);
-		mic.Cycle(); // ISHR
+		while (!mic.Cycle()) {
+		}
 		CHECK(mic.GetRegisters().tos == 0);
 	}
 }
