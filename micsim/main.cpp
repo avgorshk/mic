@@ -234,5 +234,7 @@ int main(int argc, char* argv[]) {
     // per cycle, so the two counters coincide.
     std::cout << "Micro-clocks completed: " << cycle_count
               << " (stall: " << mic.GetStallCycles() << ")" << std::endl;
+    // Cycles where the S3 slot retired a MIR: the machine's useful work.
+    std::cout << "Retirements: " << mic.GetRetireCycles() << std::endl;
     std::cout << "Output written: " << output_file << std::endl;
 }

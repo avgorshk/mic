@@ -87,6 +87,8 @@ def run_one(name, relpath, extra_args, expected):
     if not m:
         return {'name': name, 'micro_clocks': None,
                 'result': 'FAIL (no cycle count)'}, program
+    rm = re.search(r'Retirements:\s*(\d+)', proc.stdout)
+    retirements = int(rm.group(1)) if rm else None
     # Time in micro-clocks: 1 simulator cycle = 3 micro-clocks.
     mt = re.search(r'Micro-clocks completed:\s*(\d+)\s*\(stall:\s*(\d+)\)',
                    proc.stdout)
@@ -102,6 +104,7 @@ def run_one(name, relpath, extra_args, expected):
                 'result': 'FAIL (word0=%u, expected %u)'
                 % (word0, expected)}, program
     return {'name': name, 'micro_clocks': micro_clocks, 'stalls': stalls,
+            'retirements': retirements,
             'result': 'ok'}, program
 
 
@@ -125,9 +128,11 @@ def main():
     total_micro = sum(r['micro_clocks'] for r in rows[:len(MICRO)])
     total_all = sum(r['micro_clocks'] for r in rows)
     total_stalls = sum(r['stalls'] for r in rows if r['stalls'])
+    total_retire = sum(r['retirements'] for r in rows if r['retirements'])
     print('TOTAL (micro) %d' % total_micro)
     print('TOTAL (all)   %d' % total_all)
     print('TOTAL (stall) %d' % total_stalls)
+    print('TOTAL (retire) %d' % total_retire)
 
     missing = [name for name, byte in COVERAGE.items()
                if all_bytes.count(byte) == 0]

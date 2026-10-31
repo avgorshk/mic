@@ -144,6 +144,12 @@ public:
 		return stall_cycles_;
 	}
 
+	// Cycles where the S3 slot retired a MIR (the "useful" cycles: every
+	// MIR of the program retires exactly once).
+	uint64_t GetRetireCycles() const {
+		return retire_cycles_;
+	}
+
 private:
 	// ---------------------------------------------------------- helpers
 
@@ -449,6 +455,7 @@ private:
 			halt_ = true;
 		}
 
+		++retire_cycles_;
 		return true;
 	}
 
@@ -514,4 +521,5 @@ private:
 	bool hold_ = false;
 	bool trace_ = false;
 	uint64_t stall_cycles_ = 0;
+	uint64_t retire_cycles_ = 0;
 };
