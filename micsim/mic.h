@@ -154,6 +154,11 @@ public:
 		return retire_cycles_;
 	}
 
+	// Hold-breakdown counters (debug aid): the delivery gates by cause.
+	uint64_t GetHoldJumpCycles() const { return hold_jump_; }
+	uint64_t GetHoldBytesCycles() const { return hold_bytes_; }
+	uint64_t GetHoldFifoCycles() const { return hold_fifo_; }
+
 private:
 	// ---------------------------------------------------------- helpers
 
@@ -175,14 +180,6 @@ private:
 	static uint32_t Need(const PipelineSlot& s) {
 		if (!s.valid) return 0;
 		return Opsize(s.sig);
-	}
-
-	// True when the ALU actually consumes MDR as an input. Gated on
-	// ena/enb: a pad MIR reads the bus mux but the ALU ignores it.
-	static bool ReadsMdr(const Signals& sig) {
-		if (sig.a_read == AREAD_MDR && sig.alu.ena) return true;
-		if (sig.b_read == BREAD_MDR && sig.alu.enb) return true;
-		return false;
 	}
 
 	// True when the producer writes the register the consumer's A input
@@ -230,15 +227,15 @@ private:
 
 		if (!queue_.HasHead()) {
 			++stall_cycles_;
+			++hold_fifo_;
 			return;
 		}
 		QueueEntry head = queue_.PeekHead();
 		Signals sig = head.sig;
 
-		bool mdr_gated = ReadsMdr(sig)
-			&& ((s2_.valid && s2_.sig.mem_rd)
-				|| (s3_.valid && s3_.sig.mem_rd)
-				|| (s4_.valid && s4_.sig.mem_rd));
+		// The MDR readers need no gate anymore: the delivery tap (tap 3)
+		// feeds the in-flight read's array word straight into the ALU,
+		// so a reader delivered any cycle computes on the fresh value.
 
 		// (c) the jump gate: a MIR with operand bytes must not latch
 		// while a write_pc MIR is about to land (its MIR2/MIR3 slot):
@@ -260,7 +257,7 @@ private:
 		uint32_t opsize = Opsize(sig);
 		bool enough = ifu_.Available() >= peek_index_ + opsize;
 
-		if (!mdr_gated && !jump_gated && enough) {
+		if (!jump_gated && enough) {
 			s1_.valid = true;
 			s1_.mir = head.mir;
 			s1_.sig = sig;
@@ -277,10 +274,11 @@ private:
 			queue_.PopHead();
 		} else {
 			++stall_cycles_;
+			if (jump_gated) ++hold_jump_;
+			if (!enough) ++hold_bytes_;
 			if (trace_) {
-				std::printf("  fetch held: mdr=%d jump=%d enough=%d\n",
-					mdr_gated ? 1 : 0, jump_gated ? 1 : 0,
-					enough ? 1 : 0);
+				std::printf("  fetch held: jump=%d enough=%d\n",
+					jump_gated ? 1 : 0, enough ? 1 : 0);
 			}
 		}
 	}
@@ -375,22 +373,40 @@ private:
 	// applied. Tap 1: MIR3's c (gap-1 producer -- its writeback lands at
 	// stage 4 of THIS cycle, after this ALU). Tap 2: MIR4's carried c
 	// (gap-2 producer -- its writeback was after the consumer's latch).
-	// The youngest producer wins (MIR3 before MIR4).
+	// Tap 3 (the MDR delivery tap): when no register producer won, an
+	// MDR-reading input reads the in-flight memory read's ARRAY word
+	// directly -- the MDR register updates only at stage 5 of this
+	// cycle, after this ALU. The youngest producer wins (tap 1, tap 2,
+	// then the delivery).
 	void ExecuteS2() {
 		if (!s2_.valid) return;
 
 		uint32_t a = s2_.a;
 		uint32_t b = s2_.b;
 
+		bool a_forwarded = false;
+		bool b_forwarded = false;
 		if (s3_.valid && ProducesA(s3_.sig, s2_.sig)) {
 			a = s3_.c;
+			a_forwarded = true;
 		} else if (s4_.valid && ProducesA(s4_.sig, s2_.sig)) {
 			a = s4_.c;
+			a_forwarded = true;
 		}
 		if (s3_.valid && ProducesB(s3_.sig, s2_.sig)) {
 			b = s3_.c;
+			b_forwarded = true;
 		} else if (s4_.valid && ProducesB(s4_.sig, s2_.sig)) {
 			b = s4_.c;
+			b_forwarded = true;
+		}
+		if (!a_forwarded && s2_.sig.a_read == AREAD_MDR
+				&& s2_.sig.alu.ena) {
+			a = DeliveryTap();
+		}
+		if (!b_forwarded && s2_.sig.b_read == BREAD_MDR
+				&& s2_.sig.alu.enb) {
+			b = DeliveryTap();
 		}
 
 		alu_.SetFunction(s2_.sig.alu);
@@ -401,6 +417,22 @@ private:
 		s2_.c = alu_.GetC();
 		s2_.n = alu_.GetN();
 		s2_.z = alu_.GetZ();
+	}
+
+	// The in-flight read's array word: the MIR4 occupant's issued read
+	// (its mar was recorded at its retire), or the MIR3 occupant's read
+	// about to issue (its mar is its own C). The array read is
+	// combinational, so the word is valid here; the delivery at stage 5
+	// still writes the register. No read in flight: the register.
+	uint32_t DeliveryTap() {
+		if (s4_.valid && s4_.rd_pending) {
+			return global_memory_->ReadNow(s4_.mar);
+		}
+		if (s3_.valid && s3_.sig.mem_rd) {
+			uint32_t mar_eff = s3_.sig.write_mar ? s3_.c : regs_.mar;
+			return global_memory_->ReadNow(mar_eff);
+		}
+		return regs_.mdr;
 	}
 
 	// ------------------------------------------------------------- retire
@@ -534,4 +566,7 @@ private:
 	bool trace_ = false;
 	uint64_t stall_cycles_ = 0;
 	uint64_t retire_cycles_ = 0;
+	uint64_t hold_jump_ = 0;
+	uint64_t hold_bytes_ = 0;
+	uint64_t hold_fifo_ = 0;
 };

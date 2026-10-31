@@ -333,8 +333,9 @@ TEST_CASE("IF_ICMPEQ Equal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	// T (taken path) -> GOTO2 lands the jump at cycle 19.
-	for (int i = 0; i < 19; ++i) {
+	// T (taken path) -> GOTO2 lands the jump at cycle 13 (the delivery
+	// tap removed the MDR gate holds).
+	for (int i = 0; i < 13; ++i) {
 		mic.Cycle();
 	}
 	auto regs = mic.GetRegisters();
@@ -449,8 +450,8 @@ TEST_CASE("IFLT Less") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	// Taken: IFLT4 (jamn) -> T -> GOTO2 lands the jump at cycle 15.
-	for (int i = 0; i < 15; ++i) {
+	// Taken: IFLT4 (jamn) -> T -> GOTO2 lands the jump at cycle 11.
+	for (int i = 0; i < 11; ++i) {
 		mic.Cycle();
 	}
 	auto regs = mic.GetRegisters();
@@ -475,8 +476,9 @@ TEST_CASE("IFLT More") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	// Not-taken: F1 discards the offset at cycle 11.
-	for (int i = 0; i < 12; ++i) {
+	// Not-taken: F1 discards the offset at cycle 9; the next opcode is
+	// at the queue front one cycle later.
+	for (int i = 0; i < 10; ++i) {
 		mic.Cycle();
 	}
 	auto regs = mic.GetRegisters();
@@ -501,7 +503,9 @@ TEST_CASE("IFLT Equal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	for (int i = 0; i < 12; ++i) {
+	// Not-taken: the F1 continuation discards the offset; the next
+	// opcode is at the queue front by cycle 10.
+	for (int i = 0; i < 10; ++i) {
 		mic.Cycle();
 	}
 	auto regs = mic.GetRegisters();
@@ -526,8 +530,8 @@ TEST_CASE("IFEQ Equal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	// Taken: IFEQ4 (jamz) -> T -> GOTO2 lands the jump at cycle 15.
-	for (int i = 0; i < 15; ++i) {
+	// Taken: IFEQ4 (jamz) -> T -> GOTO2 lands the jump at cycle 11.
+	for (int i = 0; i < 11; ++i) {
 		mic.Cycle();
 	}
 	auto regs = mic.GetRegisters();
@@ -552,7 +556,9 @@ TEST_CASE("IFEQ Nonequal") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	for (int i = 0; i < 12; ++i) {
+	// Not-taken: the F1 continuation discards the offset; the next
+	// opcode is at the queue front by cycle 10.
+	for (int i = 0; i < 10; ++i) {
 		mic.Cycle();
 	}
 	auto regs = mic.GetRegisters();
@@ -591,9 +597,9 @@ TEST_CASE("INVOKEVIRTUAL") {
 	mic.SetSP(memory.GetDataSegmentAddress() + sp);
 	mic.SetTOS(data[sp]);
 
-	// The callee's first BIPUSH1 retires at cycle 24: the frame is set
+	// The callee's first BIPUSH1 retires at cycle 22: the frame is set
 	// up, its opcode is popped, and its SP increment has landed.
-	for (int i = 0; i < 24; ++i) {
+	for (int i = 0; i < 22; ++i) {
 		mic.Cycle();
 	}
 
@@ -640,10 +646,10 @@ TEST_CASE("IRETURN") {
 	mic.SetTOS(data[sp]);
 	mic.SetLV(memory.GetDataSegmentAddress() + 4);
 
-	// The return target's BIPUSH1 retires at cycle 17: the return value
+	// The return target's BIPUSH1 retires at cycle 11: the return value
 	// is written, the caller frame is restored, and the opcode is
 	// popped.
-	for (int i = 0; i < 17; ++i) {
+	for (int i = 0; i < 11; ++i) {
 		mic.Cycle();
 	}
 

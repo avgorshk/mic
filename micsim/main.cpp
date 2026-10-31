@@ -234,5 +234,9 @@ int main(int argc, char* argv[]) {
     // rest. Busy + Empty == cycle_count, exactly.
     std::cout << "Busy cycles (retirements): " << busy << std::endl;
     std::cout << "Empty cycles: " << (cycle_count - busy) << std::endl;
+    std::cout << "Hold breakdown (jump/bytes/fifo): "
+              << mic.GetHoldJumpCycles() << " / "
+              << mic.GetHoldBytesCycles() << " / "
+              << mic.GetHoldFifoCycles() << std::endl;
     std::cout << "Output written: " << output_file << std::endl;
 }
