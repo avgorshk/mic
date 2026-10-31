@@ -102,8 +102,14 @@
     <ClInclude Include="micro_instructions\wide_istore_micro_instructions.h">
       <Filter>Header Files\micro_instructions</Filter>
     </ClInclude>
-    <ClInclude Include="micro_instructions\wide_micro_instruction.h">
+    <ClInclude Include="micro_instructions\branch_micro_instruction.h">
       <Filter>Header Files\micro_instructions</Filter>
+    </ClInclude>
+    <ClInclude Include="decoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="instruction_queue.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

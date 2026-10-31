@@ -159,7 +159,9 @@
     <ClInclude Include="micro_instructions\t_micro_instruction.h" />
     <ClInclude Include="micro_instructions\wide_iload_micro_instructions.h" />
     <ClInclude Include="micro_instructions\wide_istore_micro_instructions.h" />
-    <ClInclude Include="micro_instructions\wide_micro_instruction.h" />
+    <ClInclude Include="micro_instructions\branch_micro_instruction.h" />
+    <ClInclude Include="decoder.h" />
+    <ClInclude Include="instruction_queue.h" />
     <ClInclude Include="signals.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
