@@ -333,7 +333,7 @@ rows: cycle count x 3).
 | baseline | `0f1d1f4` | 46,352,994 | 0 | 46,352,994 | 1.00x | dispatch-timing model fix (JMPC sees the pre-edge MBR); the reference point |
 | a-bus | `d4b01da` | 40,385,256 | 0 | 40,385,256 | 1.14x | dual ALU buses (A-bus mux); operands without H round trips |
 | ifu | `fbdcbd4` | 30,646,959 | 60,255 | 30,707,214 | 1.52x | instruction fetch unit (PC + 6-byte queue, 4-byte refills); MAIN removed, NOP is the decode step |
-| pipeline | `b09d658` | 19,683,918 | 15,302 | 19,699,220 | 1.56x | 4-stage MIR conveyor with forwarding, fetch gates, dispatch flushes; 1 cycle = 1 micro-clock |
+| pipeline | `b09d658` | 19,683,918 | 15,302 | 19,699,220 | 2.37x | 4-stage MIR conveyor with forwarding, fetch gates, dispatch flushes; 1 cycle = 1 micro-clock |
 
 Pre-pipeline busy/empty are derived (their stalls were whole-machine
 holds); the pipeline row is measured. `run_bench.py` also reports a
