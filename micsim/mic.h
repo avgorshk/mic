@@ -78,12 +78,19 @@ public:
 	// One machine cycle = one micro-clock: the four slots execute their
 	// stage in parallel, M1 -> M2 -> M3 -> M4 in-cycle.
 	bool Cycle() {
+		bool l = false;  // A/B assign (the S1 latch ran)
+		bool a = false;  // the ALU ran
+		bool c = false;  // C assign (the S3 writeback at stage 4)
+		bool m = false;  // MDR read delivered / write committed (stage 4)
+
 		if (!hold_) {
 			Fetch();
 		} else {
 			hold_ = false;
 		}
+		l = s1_.valid;
 		LatchS1();
+		a = s2_.valid;
 		ExecuteS2();
 		if (!RetireS3()) {
 			// Wholesale hold: the retire's bytes are not in the queue
@@ -94,6 +101,7 @@ public:
 			hold_ = true;
 			ifu_.Cycle();
 			++stall_cycles_;
+			CountParts(l, a, false, false);
 			if (trace_) {
 				std::printf(
 					"  retire hold: need=%u q=%u\n",
@@ -102,8 +110,11 @@ public:
 			}
 			return halt_;
 		}
+		c = s3_.valid;
+		m = s4_.valid && (s4_.rd_pending || s4_.wr_pending);
 		Stage4();
 		Advance();
+		CountParts(l, a, c, m);
 
 		if (trace_) {
 			std::printf(
@@ -144,14 +155,56 @@ public:
 		return stall_cycles_;
 	}
 
-	// Cycles where the S3 slot retired a MIR (the "useful" cycles: every
-	// MIR of the program retires exactly once).
+	// Cycles where the S3 slot retired a MIR (every MIR of the program
+	// retires exactly once).
 	uint64_t GetRetireCycles() const {
 		return retire_cycles_;
 	}
 
+	// Per-part activity: a cycle counts a part when that part performed
+	// its operation (the S1 latch assigned A/B, the ALU ran, the S3
+	// writeback assigned C to the register file, the S4 slot delivered
+	// an MDR read or committed a write). Busy = at least one part ran;
+	// Busy + Empty == total cycles, exactly.
+	uint64_t GetLatchCycles() const {
+		return latch_cycles_;
+	}
+
+	uint64_t GetAluCycles() const {
+		return alu_cycles_;
+	}
+
+	uint64_t GetCAssignCycles() const {
+		return cassign_cycles_;
+	}
+
+	uint64_t GetMemCycles() const {
+		return mem_cycles_;
+	}
+
+	uint64_t GetBusyCycles() const {
+		return busy_cycles_;
+	}
+
+	uint64_t GetEmptyCycles() const {
+		return empty_cycles_;
+	}
+
 private:
 	// ---------------------------------------------------------- helpers
+
+	// Per-cycle part accounting: Busy + Empty == total cycles, exactly.
+	void CountParts(bool l, bool a, bool c, bool m) {
+		if (l) ++latch_cycles_;
+		if (a) ++alu_cycles_;
+		if (c) ++cassign_cycles_;
+		if (m) ++mem_cycles_;
+		if (l || a || c || m) {
+			++busy_cycles_;
+		} else {
+			++empty_cycles_;
+		}
+	}
 
 	// Operand bytes a MIR consumes at its retire (MBR2 reads consume 2).
 	static uint32_t Opsize(const Signals& sig) {
@@ -522,4 +575,10 @@ private:
 	bool trace_ = false;
 	uint64_t stall_cycles_ = 0;
 	uint64_t retire_cycles_ = 0;
+	uint64_t latch_cycles_ = 0;
+	uint64_t alu_cycles_ = 0;
+	uint64_t cassign_cycles_ = 0;
+	uint64_t mem_cycles_ = 0;
+	uint64_t busy_cycles_ = 0;
+	uint64_t empty_cycles_ = 0;
 };

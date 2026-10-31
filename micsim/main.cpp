@@ -236,5 +236,12 @@ int main(int argc, char* argv[]) {
               << " (stall: " << mic.GetStallCycles() << ")" << std::endl;
     // Cycles where the S3 slot retired a MIR: the machine's useful work.
     std::cout << "Retirements: " << mic.GetRetireCycles() << std::endl;
+    // Per-part activity: Busy + Empty == cycle_count, exactly.
+    std::cout << "A/B assign cycles: " << mic.GetLatchCycles() << std::endl;
+    std::cout << "ALU cycles: " << mic.GetAluCycles() << std::endl;
+    std::cout << "C assign cycles: " << mic.GetCAssignCycles() << std::endl;
+    std::cout << "MDR read/write cycles: " << mic.GetMemCycles() << std::endl;
+    std::cout << "Busy cycles: " << mic.GetBusyCycles() << std::endl;
+    std::cout << "Empty cycles: " << mic.GetEmptyCycles() << std::endl;
     std::cout << "Output written: " << output_file << std::endl;
 }

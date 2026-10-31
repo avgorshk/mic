@@ -87,8 +87,16 @@ def run_one(name, relpath, extra_args, expected):
     if not m:
         return {'name': name, 'micro_clocks': None,
                 'result': 'FAIL (no cycle count)'}, program
+    cycles = int(m.group(1))
     rm = re.search(r'Retirements:\s*(\d+)', proc.stdout)
     retirements = int(rm.group(1)) if rm else None
+    pm = {k: re.search(r'%s:\s*(\d+)' % k, proc.stdout) for k in
+          ('A/B assign cycles', 'ALU cycles', 'C assign cycles',
+           'MDR read/write cycles', 'Busy cycles', 'Empty cycles')}
+    parts = {k: int(v.group(1)) for k, v in pm.items() if v}
+    if not parts or parts.get('Busy cycles', 0) + parts.get('Empty cycles', 0) != cycles:
+        return {'name': name, 'micro_clocks': None,
+                'result': 'FAIL (Busy + Empty != cycles)'}, program
     # Time in micro-clocks: 1 simulator cycle = 3 micro-clocks.
     mt = re.search(r'Micro-clocks completed:\s*(\d+)\s*\(stall:\s*(\d+)\)',
                    proc.stdout)
@@ -104,7 +112,7 @@ def run_one(name, relpath, extra_args, expected):
                 'result': 'FAIL (word0=%u, expected %u)'
                 % (word0, expected)}, program
     return {'name': name, 'micro_clocks': micro_clocks, 'stalls': stalls,
-            'retirements': retirements,
+            'retirements': retirements, 'parts': parts,
             'result': 'ok'}, program
 
 
@@ -129,10 +137,20 @@ def main():
     total_all = sum(r['micro_clocks'] for r in rows)
     total_stalls = sum(r['stalls'] for r in rows if r['stalls'])
     total_retire = sum(r['retirements'] for r in rows if r['retirements'])
+    ok_parts = [r['parts'] for r in rows if 'parts' in r and r['parts']]
+    if ok_parts:
+        total_parts = {k: sum(p[k] for p in ok_parts)
+                       for k in ok_parts[0].keys()}
+    else:
+        total_parts = {}
     print('TOTAL (micro) %d' % total_micro)
     print('TOTAL (all)   %d' % total_all)
     print('TOTAL (stall) %d' % total_stalls)
     print('TOTAL (retire) %d' % total_retire)
+    if total_parts:
+        for k in ('A/B assign cycles', 'ALU cycles', 'C assign cycles',
+                  'MDR read/write cycles', 'Busy cycles', 'Empty cycles'):
+            print('TOTAL (%s) %d' % (k, total_parts[k]))
 
     missing = [name for name, byte in COVERAGE.items()
                if all_bytes.count(byte) == 0]
